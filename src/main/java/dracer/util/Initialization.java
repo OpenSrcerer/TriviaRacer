@@ -10,7 +10,6 @@ import org.slf4j.LoggerFactory;
 import javax.annotation.Nonnull;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
-import java.io.StreamCorruptedException;
 import java.util.ArrayList;
 import java.util.Scanner;
 
@@ -50,8 +49,8 @@ public final class Initialization {
     }
 
     public static void initializeDefaultFiles(@Nonnull String file1, @Nonnull String file2) throws Exception {
-        Dracer.wordsList = retrieveWordFile(file1);
-        Dracer.offensiveWordsList = retrieveWordFile(file2);
+        Dracer.cleanWords = retrieveWordFile(file1);
+        Dracer.offensiveWords = retrieveWordFile(file2);
         lgr.info("Loaded word files " + file1 + " and " + file2);
     }
 

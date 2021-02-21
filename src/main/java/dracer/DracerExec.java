@@ -8,7 +8,7 @@ public class DracerExec {
             Dracer.initialize();
         } catch (Exception | Error e) {
             Initialization.lgr.error("Unable to start the bot. Details:", e);
-            Dracer.shutdown();
+            Dracer.immediateShutdown();
         }
     }
 }
