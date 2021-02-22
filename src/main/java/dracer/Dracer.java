@@ -1,7 +1,6 @@
 package dracer;
 
 import dracer.events.EventDelegate;
-import dracer.racing.api.DictionaryAPI;
 import dracer.util.Initialization;
 import net.dv8tion.jda.api.JDA;
 import net.dv8tion.jda.api.JDABuilder;
@@ -17,6 +16,7 @@ import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ThreadFactory;
 
 public abstract class Dracer {
@@ -34,14 +34,15 @@ public abstract class Dracer {
     // ***************************************************************
 
     /**
-     * Thread Pool for the bot.
+     * Thread Pools for the bot.
      */
-    public static final ExecutorService NON_SCHEDULED_EXECUTOR;
+    public static final ExecutorService COMMAND_EXECUTOR;
+    public static final ScheduledExecutorService RACE_EXECUTOR;
 
     /**
      * The JDA instance of the bot.
      */
-    public static JDA dracer;
+    public static JDA dracerInst;
 
     // Initializing for the Thread Factory & Pool
     static {
@@ -54,7 +55,17 @@ public abstract class Dracer {
             }
         };
 
-        NON_SCHEDULED_EXECUTOR = Executors.newFixedThreadPool(AVAILABLE_CORES/2, nonScheduledFactory);
+        ThreadFactory scheduledFactory = new ThreadFactory() {
+            private int counter = 1;
+
+            @Override
+            public Thread newThread(@Nonnull final Runnable r) {
+                return new Thread(r, "Handler-" + counter++);
+            }
+        };
+
+        COMMAND_EXECUTOR = Executors.newFixedThreadPool(AVAILABLE_CORES/2, nonScheduledFactory);
+        RACE_EXECUTOR = Executors.newScheduledThreadPool(AVAILABLE_CORES/2, scheduledFactory);
     }
 
     /**
@@ -66,11 +77,9 @@ public abstract class Dracer {
         // Get the configuration values
         final String[] config = Initialization.initializeTokens();
 
-        Initialization.setConstants(config[0], dracer.getSelfUser().getId(), dracer.getSelfUser().getAvatarUrl());
         Initialization.initializeDefaultFiles("clean.txt", "offensive.txt");
-        DictionaryAPI.setKeys(config[2], config[3]);
 
-        dracer = JDABuilder
+        dracerInst = JDABuilder
                 .create(
                         config[1],
                         EnumSet.of(
@@ -92,7 +101,8 @@ public abstract class Dracer {
                 .addEventListeners(new EventDelegate())
                 .build();
 
-        dracer.getPresence().setPresence(OnlineStatus.DO_NOT_DISTURB, Activity.competing("loading..."));
+        Initialization.setConstants(config[0], dracerInst.getSelfUser().getId(), dracerInst.getSelfUser().getAvatarUrl());
+        dracerInst.getPresence().setPresence(OnlineStatus.DO_NOT_DISTURB, Activity.competing("loading..."));
     }
 
     /**
@@ -100,10 +110,10 @@ public abstract class Dracer {
      * or failure to initialize necessary configuration files.
      */
     public static void immediateShutdown() {
-        NON_SCHEDULED_EXECUTOR.shutdown();
+        COMMAND_EXECUTOR.shutdown();
 
-        if (dracer != null) {
-            dracer.shutdownNow();
+        if (dracerInst != null) {
+            dracerInst.shutdownNow();
         }
 
         System.exit(-1);

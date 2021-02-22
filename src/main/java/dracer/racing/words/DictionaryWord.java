@@ -6,7 +6,7 @@ import javax.annotation.Nullable;
 public interface DictionaryWord {
     @Nonnull String getWord();
 
-    @Nullable String getMeaning();
+    @Nullable String getFirstDefinition();
 
     default boolean isClean() {
         return this instanceof CleanWord;

@@ -1,17 +1,17 @@
 package dracer.racing.words;
 
-import dracer.Dracer;
 import org.jetbrains.annotations.Nullable;
 
 import javax.annotation.Nonnull;
-import java.util.concurrent.ThreadLocalRandom;
+import java.util.List;
 
 public class CleanWord implements DictionaryWord {
     private final String word;
-    private final String meaning;
+    private final List<String> definitions;
 
-    protected CleanWord() {
-        word = Dracer.cleanWords.get(ThreadLocalRandom.current().nextInt(Dracer.cleanWords.size()));
+    public CleanWord(String word, List<String> definitions) {
+        this.word = word;
+        this.definitions = definitions;
     }
 
     @Nonnull
@@ -22,7 +22,7 @@ public class CleanWord implements DictionaryWord {
 
     @Nullable
     @Override
-    public String getMeaning() {
-        return null;
+    public String getFirstDefinition() {
+        return (definitions == null) ? null : definitions.get(0);
     }
 }

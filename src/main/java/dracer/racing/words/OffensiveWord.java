@@ -9,7 +9,7 @@ import java.util.concurrent.ThreadLocalRandom;
 public class OffensiveWord implements DictionaryWord {
     private final String word;
 
-    protected OffensiveWord() {
+    public OffensiveWord() {
         /*if (clean) {
             word = Dracer.cleanWords
         } else {
@@ -28,7 +28,7 @@ public class OffensiveWord implements DictionaryWord {
 
     @Override
     @Nullable
-    public String getMeaning() {
+    public String getFirstDefinition() {
         return null;
     }
 }

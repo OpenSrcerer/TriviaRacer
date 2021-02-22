@@ -1,75 +1,79 @@
 package dracer.racing.api;
 
-import net.dv8tion.jda.api.utils.data.DataObject;
+import dracer.Dracer;
+import dracer.racing.DictionaryRace;
+import net.dv8tion.jda.api.utils.data.DataArray;
 import okhttp3.*;
-import okhttp3.internal.annotations.EverythingIsNonNull;
 
 import java.io.IOException;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.ThreadLocalRandom;
 
 public abstract class DictionaryAPI {
     private static final OkHttpClient client = new OkHttpClient();
+    private static final String API_URL = "https://api.dictionaryapi.dev/api/v2/entries/en_US/";
 
-    private static String DICTIONARY_KEY;
-    private static String THESAURUS_KEY;
-    private static final String API_URL = "https://www.dictionaryapi.com";
+    public static void getWords(DictionaryRace race, int wordsToGet) {
+        CompletableFuture.supplyAsync(() -> {
+            for (String word : getRandomWords(wordsToGet)) {
+                Request request = new Request.Builder()
+                        .url(buildUrl(word))
+                        .header("word", word)
+                        .build();
 
-    public static void setKeys(String dKey, String tKey) {
-        DICTIONARY_KEY = dKey;
-        THESAURUS_KEY = tKey;
-
-        client.a
-    }
-
-    public static void makeRequest() {
-        Request request = new Request.Builder()
-                .header("key", DICTIONARY_KEY)
-                .build();
-
-        client.newCall(request).enqueue(new Callback() {
-            @Override
-            @EverythingIsNonNull
-            public void onFailure(Call call, IOException ex) {
-                ex.printStackTrace();
+                client.newCall(request).enqueue(race);
             }
-
-            @Override
-            @EverythingIsNonNull
-            public void onResponse(Call call, Response response) throws IOException {
-                if (!response.isSuccessful()) {
-                    throw new IOException("Something went wrong, code " + response);
-                } else {
-
-                }
-            }
-        });
+            return null;
+        }, Dracer.RACE_EXECUTOR
+        );
     }
 
     private static HttpUrl buildUrl(String word) {
-        final HttpUrl url = HttpUrl.parse(API_URL);
+        final HttpUrl url = HttpUrl.parse(API_URL.concat(word));
 
         if (url == null) {
             throw new IllegalArgumentException();
         }
 
-        return url.newBuilder()
-                .addQueryParameter("api", "api")
-                .addQueryParameter("version", "v3")
-                .addQueryParameter("ref", "references")
-                .addQueryParameter("dictionary", "collegiate")
-                .addQueryParameter("formatting", "json")
-                .addQueryParameter("word", word)
-                .build();
+        return url.newBuilder().build();
     }
 
-    private static void parseResponse(Response response) throws IOException {
+    public static List<String> parseResponse(Response response) throws IOException {
+        List<String> definitions = new ArrayList<>();
         try (ResponseBody body = response.body()) {
             if (body == null) {
                 throw new IOException("Response body was null.");
             }
+            try {
+                DataArray json = DataArray.fromJson(body.string()); // Consume the body once
+                DataArray meanings = json.getObject(0).getArray("meanings");
 
-            DataObject json = DataObject.fromJson(body.string());
-
-            return json.getArray("def")
+                if (meanings.isEmpty()) {
+                    definitions.add("No meanings found for this one :(");
+                } else {
+                    DataArray defs = meanings.getObject(0).getArray("definitions");
+                    for (Object def : defs) {
+                        HashMap<String, String> definition = (HashMap<String, String>) def;
+                        definitions.add(definition.get("definition"));
+                    }
+                }
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
         }
+        return definitions;
+    }
+
+    private static List<String> getRandomWords(int wordsToGet) {
+        List<String> wordList = new ArrayList<>();
+
+        for (int i = 0; i < wordsToGet; ++i) {
+            wordList.add(Dracer.cleanWords.get(ThreadLocalRandom.current().nextInt(Dracer.cleanWords.size())));
+        }
+
+        return wordList;
     }
 }
