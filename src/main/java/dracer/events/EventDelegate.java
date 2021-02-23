@@ -3,6 +3,7 @@ package dracer.events;
 import dracer.Dracer;
 import dracer.commands.user.JoinRace;
 import dracer.commands.user.StartRace;
+import dracer.racing.RaceHandler;
 import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.events.ReadyEvent;
@@ -22,9 +23,16 @@ public class EventDelegate extends ListenerAdapter {
         Dracer.dracerInst.getPresence().setPresence(OnlineStatus.ONLINE, Activity.playing("turbotastic!"));
     }
 
+    @SuppressWarnings("ConstantConditions")
     @Override
     public void onGuildMessageReceived(@Nonnull final GuildMessageReceivedEvent event) {
         if (!validateEvent(event)) { // If the event is invalid or the member is a bot, don't reply
+            return;
+        }
+
+        if (RaceHandler.isChannelRaceMode(event.getChannel().getId())) {
+            RaceHandler.incrementWordsForRacer(event.getChannel().getId(), event.getMember().getId());
+            event.getMessage().delete().queue(null, null);
             return;
         }
 
@@ -33,7 +41,7 @@ public class EventDelegate extends ListenerAdapter {
 
         switch (arguments.get(0)) {
             case "dcr.start" -> new StartRace(event);
-            case "dcr.join" -> new JoinRace();
+            case "dcr.join" -> new JoinRace(event);
         }
     }
 

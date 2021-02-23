@@ -1,58 +1,81 @@
 package dracer.racing;
 
+import dracer.Dracer;
 import dracer.racing.api.DictionaryAPI;
 import dracer.racing.words.CleanWord;
 import dracer.racing.words.DictionaryWord;
+import dracer.util.RaceTime;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Message;
 import okhttp3.Call;
-import okhttp3.Callback;
 import okhttp3.Response;
 import org.jetbrains.annotations.NotNull;
-import org.jetbrains.annotations.Nullable;
 
+import javax.annotation.Nonnull;
 import java.io.IOException;
 import java.util.*;
+import java.util.concurrent.ScheduledFuture;
+import java.util.stream.Collectors;
 
-public class DictionaryRaceImpl implements DictionaryRace, Callback {
+public final class DictionaryRaceImpl implements DictionaryRace {
+
+    // --- Immutable ---
     private final Map<String, Racer> players = new HashMap<>();
     private final List<DictionaryWord> raceWords = Collections.synchronizedList(new ArrayList<>());
+    private final RaceTime time = new RaceTime(); // Holds the race's length and other timeframes where actions needs to be taken
+    private final String guildId, channelId;
+    private final String emojID = Dracer.getRandomEmojis();
+    // -----------------
 
-    private RaceState state = RaceState.STARTING;
-    private Racer winner;
+    // --- Mutable ---
+    private ScheduledFuture<Void> raceEndFuture; // A ScheduledFuture that represents when finishSequence() is called.
+    private RaceState state = RaceState.STARTING; // Race's current state
+    private Message message; // Message to refer to and update while racing
+    private boolean cancelled = false;
+    // -----------------
 
-    protected DictionaryRaceImpl(Member startingMember) {
+    protected DictionaryRaceImpl(String guildId, String channelId, Member startingMember) {
+        this.guildId = guildId;
+        this.channelId = channelId;
         DictionaryAPI.getWords(this,10);
         players.put(startingMember.getId(), new Racer(startingMember));
     }
 
     // ---- Callback Overrides ----
     @Override
-    public void onFailure(Call call, IOException e) {
+    public void onFailure(@NotNull Call call, IOException e) {
         e.printStackTrace();
     }
 
     @Override
     public void onResponse(Call call, Response response) throws IOException {
         String word = call.request().header("word");
-
         List<String> definitions = new ArrayList<>();
+
         if (!response.isSuccessful()) {
             definitions.add("No definition found for this one :(");
-            raceWords.add(new CleanWord(word, definitions));
         } else {
             definitions = DictionaryAPI.parseResponse(response);
-            raceWords.add(new CleanWord(word, definitions));
         }
-        System.out.println("Callback " + raceWords.size() + "!");
-        if (raceWords.size() == 10) {
-            raceWords.forEach(w -> System.out.println(w.getWord() + " -> " + w.getFirstDefinition()));
-        }
+        raceWords.add(new CleanWord(word, definitions));
     }
 
     // ---- Command Overrides ----
     @Override
-    public void joinStartingGame(Member member) {
-        players.put(member.getId(), new Racer(member));
+    public boolean addRacer(Member member) {
+        if (players.get(member.getId()) == null) {
+            players.put(member.getId(), new Racer(member));
+            return true; // signal success
+        }
+        return false; // signal failure
+    }
+
+    @Override
+    public void incrementWords(String racerId) {
+        Racer racer = players.get(racerId);
+        if (racer != null) {
+            racer.incrementWords();
+        }
     }
 
     @Override
@@ -61,8 +84,31 @@ public class DictionaryRaceImpl implements DictionaryRace, Callback {
     }
 
     @Override
-    public void setWinner(String userId) {
-        winner = players.get(userId);
+    public void setEndFuture(ScheduledFuture<Void> future) {
+        raceEndFuture = future;
+    }
+
+    @Override
+    public void setMessage(Message message) {
+        this.message = message;
+    }
+
+    @Override
+    public boolean isCancelled() {
+        return cancelled;
+    }
+
+    @Override
+    public void cancelFuture() {
+        if (raceEndFuture != null) {
+            raceEndFuture.cancel(false);
+        }
+        cancelled = true;
+    }
+
+    @Override
+    public void setTime() {
+        this.time.setTemporals();
     }
 
     @NotNull
@@ -83,9 +129,53 @@ public class DictionaryRaceImpl implements DictionaryRace, Callback {
         return state;
     }
 
-    @Nullable
+    @Nonnull
     @Override
-    public Racer getWinner() {
-        return winner;
+    public RaceTime getTime() {
+        return time;
+    }
+
+    @NotNull
+    @Override
+    public Message getMessage() {
+        return message;
+    }
+
+    @NotNull
+    @Override
+    public String getLeaderboard() {
+        StringBuilder leaderboard = new StringBuilder();
+        // Calculate the winner
+        List<Racer> sortedRacers = getPlayers()
+                .stream()
+                .sorted(Comparator.comparing(Racer::getWordsTyped).reversed())
+                .collect(Collectors.toList());
+
+        for (int i = 0; i < sortedRacers.size(); ++i) {
+            leaderboard.append("**#").append(i + 1).append("** <@")
+                    .append(sortedRacers.get(i).member.getId())
+                    .append("> → Words Typed: ")
+                    .append(sortedRacers.get(i).getWordsTyped()).append("\n");
+        }
+
+        return leaderboard.toString();
+    }
+
+    @NotNull
+    @Override
+    public String getGuildId() {
+        return guildId;
+    }
+
+    @NotNull
+    @Override
+    public String getChannelId() {
+        return channelId;
+    }
+
+    @NotNull
+    @Override
+    public String getEmojID() {
+        return emojID;
     }
 }

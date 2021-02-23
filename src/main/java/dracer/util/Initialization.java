@@ -7,7 +7,6 @@ import net.dv8tion.jda.api.utils.data.DataObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nonnull;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
 import java.util.ArrayList;
@@ -48,10 +47,17 @@ public final class Initialization {
         return tokens;
     }
 
-    public static void initializeDefaultFiles(@Nonnull String file1, @Nonnull String file2) throws Exception {
+    public static void initFiles(String file1, String file2, String file3) throws Exception {
         Dracer.cleanWords = retrieveWordFile(file1);
         Dracer.offensiveWords = retrieveWordFile(file2);
-        lgr.info("Loaded word files " + file1 + " and " + file2);
+        try (InputStream emojisFile = DracerExec.class.getClassLoader().getResourceAsStream(file3)) {
+            if (emojisFile == null) {
+                throw new NullPointerException("Emoji file not found");
+            }
+            Dracer.emojis = DataObject.fromJson(emojisFile).getArray("emojis");
+        }
+
+        lgr.info("Loaded files " + file1 + ", " + file2 + " and " + file3 + ".");
     }
 
     private static ArrayList<String> retrieveWordFile(String fileName) throws Exception {

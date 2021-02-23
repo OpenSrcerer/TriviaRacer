@@ -10,14 +10,12 @@ import net.dv8tion.jda.api.requests.GatewayIntent;
 import net.dv8tion.jda.api.utils.ChunkingFilter;
 import net.dv8tion.jda.api.utils.MemberCachePolicy;
 import net.dv8tion.jda.api.utils.cache.CacheFlag;
+import net.dv8tion.jda.api.utils.data.DataArray;
 
 import javax.annotation.Nonnull;
 import java.util.ArrayList;
 import java.util.EnumSet;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.ScheduledExecutorService;
-import java.util.concurrent.ThreadFactory;
+import java.util.concurrent.*;
 
 public abstract class Dracer {
     // ***************************************************************
@@ -28,9 +26,15 @@ public abstract class Dracer {
     public static String AVATAR_URL;
     public static final int AVAILABLE_CORES = Math.max(Runtime.getRuntime().availableProcessors(), 2);
 
+    // --- Racing Constants ---
+    public static final int GRACE_PERIOD = 20;
+    public static final int RACE_LENGTH = 60;
+    public static final int TOTAL_LENGTH = GRACE_PERIOD + RACE_LENGTH;
+
     // --- Word Files ---
     public static ArrayList<String> cleanWords;
     public static ArrayList<String> offensiveWords;
+    public static DataArray emojis;
     // ***************************************************************
 
     /**
@@ -77,7 +81,7 @@ public abstract class Dracer {
         // Get the configuration values
         final String[] config = Initialization.initializeTokens();
 
-        Initialization.initializeDefaultFiles("clean.txt", "offensive.txt");
+        Initialization.initFiles("clean.txt", "offensive.txt", "emojis-oliveratgithub.json");
 
         dracerInst = JDABuilder
                 .create(
@@ -103,6 +107,14 @@ public abstract class Dracer {
 
         Initialization.setConstants(config[0], dracerInst.getSelfUser().getId(), dracerInst.getSelfUser().getAvatarUrl());
         dracerInst.getPresence().setPresence(OnlineStatus.DO_NOT_DISTURB, Activity.competing("loading..."));
+    }
+
+    public static String getRandomEmojis() {
+        StringBuilder builder = new StringBuilder();
+        for (int i = 0; i < 6; ++i) {
+            builder.append(emojis.getObject(ThreadLocalRandom.current().nextInt(4032)).getString("emoji"));
+        }
+        return builder.toString();
     }
 
     /**

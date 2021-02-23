@@ -18,8 +18,11 @@ public class StartRace implements Command {
 
     @Override
     public void run() {
-        if (RaceHandler.addRace(event.getChannel().getId(), event.getMember())) {
-            event.getChannel().sendMessage("A race was successfully started by <@" + event.getAuthor().getId() + ">").queue();
+        if (!RaceHandler.isRaceActive(event.getChannel().getId())) {
+            RaceHandler.addRace(event.getGuild(), event.getChannel(), event.getMember());
+        } else {
+            // noinspection ConstantConditions
+            event.getChannel().sendMessage("<@" + event.getMember().getId() + "> A race is already running in this channel!").queue();
         }
     }
 
