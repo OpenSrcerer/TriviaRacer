@@ -2,6 +2,7 @@ package dracer.events;
 
 import dracer.Dracer;
 import dracer.commands.user.JoinRace;
+import dracer.commands.user.LeaveRace;
 import dracer.commands.user.StartRace;
 import dracer.racing.RaceHandler;
 import net.dv8tion.jda.api.OnlineStatus;
@@ -42,6 +43,7 @@ public class EventDelegate extends ListenerAdapter {
         switch (arguments.get(0)) {
             case "dcr.start" -> new StartRace(event);
             case "dcr.join" -> new JoinRace(event);
+            case "dcr.leave" -> new LeaveRace(event);
         }
     }
 

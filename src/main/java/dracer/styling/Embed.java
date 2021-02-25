@@ -43,6 +43,7 @@ public class Embed extends EmbedBuilder {
             secondsToStart = time.getSecondsToStartOfRace() + 1;
         }
 
+
         setTitle("A wild dictionary race appears! Type `dcr.join` to join!");
         StringBuilder playersList = new StringBuilder(); // Get current players
         race.getPlayers().forEach(racer -> playersList.append("<@").append(racer.member.getId()).append(">\n"));

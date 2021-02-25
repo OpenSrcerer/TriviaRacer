@@ -2,6 +2,7 @@ package dracer.racing;
 
 import dracer.Dracer;
 import dracer.racing.api.DictionaryAPI;
+import dracer.racing.entities.Racer;
 import dracer.racing.words.CleanWord;
 import dracer.racing.words.DictionaryWord;
 import dracer.util.RaceTime;
@@ -67,7 +68,16 @@ public final class DictionaryRaceImpl implements DictionaryRace {
             players.put(member.getId(), new Racer(member));
             return true; // signal success
         }
-        return false; // signal failure
+        return false;
+    }
+
+    @Override
+    public boolean removeRacer(String racerId) {
+        if (players.get(racerId) != null) {
+            players.remove(racerId);
+            return true; // signal success
+        }
+        return false;
     }
 
     @Override

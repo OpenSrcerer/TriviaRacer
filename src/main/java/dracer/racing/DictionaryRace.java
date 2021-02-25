@@ -1,5 +1,6 @@
 package dracer.racing;
 
+import dracer.racing.entities.Racer;
 import dracer.racing.words.DictionaryWord;
 import dracer.util.RaceTime;
 import net.dv8tion.jda.api.entities.Member;
@@ -11,6 +12,10 @@ import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 
 public interface DictionaryRace extends Callback {
+    // --- Const ---
+    int RACE_TASKS = 10;
+    // -----------------
+
     enum RaceState {
         STARTING, IN_PROGRESS, FINISHED
     }
@@ -28,6 +33,8 @@ public interface DictionaryRace extends Callback {
     void cancelFuture();
 
     boolean addRacer(Member member);
+
+    boolean removeRacer(String racerId);
 
     boolean isCancelled();
 

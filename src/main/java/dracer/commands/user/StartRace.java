@@ -33,6 +33,6 @@ public class StartRace implements Command {
 
     @Override
     public GuildMessageReceivedEvent getEvent() {
-        return null;
+        return event;
     }
 }

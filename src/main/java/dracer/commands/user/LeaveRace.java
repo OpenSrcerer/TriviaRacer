@@ -8,11 +8,11 @@ import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-public class JoinRace implements Command {
-    public static final Logger lgr = LoggerFactory.getLogger(StartRace.class);
+public class LeaveRace implements Command {
+    public static final Logger lgr = LoggerFactory.getLogger(LeaveRace.class);
     private final GuildMessageReceivedEvent event;
 
-    public JoinRace(GuildMessageReceivedEvent event) {
+    public LeaveRace(GuildMessageReceivedEvent event) {
         this.event = event;
         CommandHandler.queueCommand(this);
     }
@@ -21,9 +21,9 @@ public class JoinRace implements Command {
     @Override
     public void run() {
         if (RaceHandler.isRaceActive(event.getChannel().getId())) {
-            DictionaryRace race = RaceHandler.addRacerToRace(event.getChannel().getId(), event.getMember());
+            DictionaryRace race = RaceHandler.removeRacer(event.getChannel().getId(), event.getMember().getId());
             if (race == null) {
-                event.getChannel().sendMessage("<@" + event.getMember().getId() + "> you are already part of this race!").queue();
+                event.getChannel().sendMessage("<@" + event.getMember().getId() + "> You are not part of this race!").queue();
             } else {
                 RaceHandler.refreshRaceMessage(race);
             }
@@ -42,3 +42,4 @@ public class JoinRace implements Command {
         return event;
     }
 }
+
