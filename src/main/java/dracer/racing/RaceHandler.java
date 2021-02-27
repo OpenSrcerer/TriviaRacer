@@ -2,16 +2,13 @@ package dracer.racing;
 
 import dracer.Dracer;
 import dracer.racing.entities.Racer;
+import dracer.racing.tasks.TaskList;
 import dracer.styling.Embed;
-import dracer.styling.ImageProcessor;
 import dracer.util.RaceTime;
-import net.dv8tion.jda.api.entities.Guild;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.TextChannel;
 
 import javax.annotation.Nullable;
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -22,9 +19,11 @@ public final class RaceHandler {
     // ChannelID, Race
     public static final Map<String, DictionaryRace> activeRaces = new HashMap<>();
 
-    public static void incrementWordsForRacer(String channelId, String racerId) {
+    public static void evaluateAnswer(String channelId, String racerId, String answer) {
         DictionaryRace race = activeRaces.get(channelId);
-        race.incrementWords(racerId);
+        if (race.evalAnswer(racerId, answer)) {
+            finishSequence(race);
+        }
     }
 
     public static boolean isChannelRaceMode(String channelId) {
@@ -35,17 +34,12 @@ public final class RaceHandler {
         return false;
     }
 
-    /**
-     * @return True if race could be added, false if not.
-     */
-    public static boolean addRace(Guild guild, TextChannel channel, Member startingMember) {
+    public static void addRace(TextChannel channel, Member startingMember) {
         if (!isRaceActive(channel.getId())) {
-            DictionaryRace newRace = new DictionaryRaceImpl(guild.getId(), channel.getId(), startingMember);
+            DictionaryRace newRace = new DictionaryRaceImpl(channel.getId(), startingMember);
             activeRaces.put(channel.getId(), newRace);
             startSequence(channel, newRace);
-            return true;
         }
-        return false;
     }
 
     public static boolean isRaceActive(String channelId) {
@@ -103,15 +97,16 @@ public final class RaceHandler {
 
     private static void doRacePrep(DictionaryRace race) {
         race.setTime(); // Set the temporals for this race
-        TextChannel channel = race.getMessage().getTextChannel();
 
         // Remove the race and exit
         if (race.isCancelled()) {
-            removeRace(channel.getId());
+            removeRace(race.getMessage().getTextChannel().getId());
             return;
         }
 
         RaceTime time = race.getTime();
+        // Initialize Tasks
+        Dracer.RACE_EXECUTOR.execute(() -> race.setTasks(TaskList.getTasks(10)));
         // Further notification messages
         Dracer.RACE_EXECUTOR.schedule(() -> race.getMessage().editMessage(EmbedFactory(race, Embed.EmbedType.STARTING)).queue(),
                 time.getSecondsPreGrace(10), TimeUnit.SECONDS);
@@ -124,26 +119,20 @@ public final class RaceHandler {
 
         // Start the race
         Dracer.RACE_EXECUTOR.schedule(() -> {
-            race.setState(DictionaryRace.RaceState.IN_PROGRESS);
-            race.getMessage().delete().queue();
-
-            InputStream meaningsImage;
             try {
-                meaningsImage = ImageProcessor.getImage(race.getWords());
-            } catch (IOException ex) {
-                race.cancelFuture();
-                channel.sendMessage("Race cancelled due to an error: " + ex.getMessage()).queue();
-                return;
-            }
+                race.setState(DictionaryRace.RaceState.IN_PROGRESS);
+                race.getMessage().delete().queue();
 
-            channel.sendMessage(getAllRacerLanes(race))
-                    .embed(EmbedFactory(race, Embed.EmbedType.ONGOING))
-                    .addFile(meaningsImage, "image.png")
-                    .queue(race::setMessage);
+                race.getMessage().getTextChannel().sendMessage(getAllRacerLanes(race))
+                        .embed(EmbedFactory(race, Embed.EmbedType.ONGOING))
+                        .queue(race::setMessage);
+            } catch (Exception ex) {
+                ex.printStackTrace();
+            }
         }, Dracer.GRACE_PERIOD, TimeUnit.SECONDS);
 
         // Schedule Leaderboard Updates
-        for (int index = Dracer.RACE_LENGTH - 5; index > 0; index-=5) {
+        for (int index = Dracer.RACE_LENGTH - 5; index > 0; index -= 5) {
             Dracer.RACE_EXECUTOR.schedule(() -> race.getMessage().editMessage(getAllRacerLanes(race))
                     .embed(EmbedFactory(race, Embed.EmbedType.ONGOING))
                     .queue(), time.getSecondsPreEndOfRace(index), TimeUnit.SECONDS);
@@ -157,7 +146,8 @@ public final class RaceHandler {
     }
 
     public static void finishSequence(DictionaryRace race) {
-        race.getMessage().editMessage(EmbedFactory(race, Embed.EmbedType.FINISHSEQ)).queue();
+        race.getMessage().delete().queue();
+        race.getMessage().getTextChannel().sendMessage(EmbedFactory(race, Embed.EmbedType.FINISHSEQ)).queue();
         race.setState(DictionaryRace.RaceState.FINISHED);
         removeRace(race.getChannelId());
     }

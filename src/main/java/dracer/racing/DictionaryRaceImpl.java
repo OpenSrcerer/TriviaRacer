@@ -1,19 +1,14 @@
 package dracer.racing;
 
 import dracer.Dracer;
-import dracer.racing.api.DictionaryAPI;
 import dracer.racing.entities.Racer;
-import dracer.racing.words.CleanWord;
-import dracer.racing.words.DictionaryWord;
+import dracer.racing.tasks.Task;
 import dracer.util.RaceTime;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
-import okhttp3.Call;
-import okhttp3.Response;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
-import java.io.IOException;
 import java.util.*;
 import java.util.concurrent.ScheduledFuture;
 import java.util.stream.Collectors;
@@ -22,43 +17,22 @@ public final class DictionaryRaceImpl implements DictionaryRace {
 
     // --- Immutable ---
     private final Map<String, Racer> players = new HashMap<>();
-    private final List<DictionaryWord> raceWords = Collections.synchronizedList(new ArrayList<>());
     private final RaceTime time = new RaceTime(); // Holds the race's length and other timeframes where actions needs to be taken
-    private final String guildId, channelId;
+    private final String channelId;
     private final String emojID = Dracer.getRandomEmojis();
     // -----------------
 
     // --- Mutable ---
     private ScheduledFuture<Void> raceEndFuture; // A ScheduledFuture that represents when finishSequence() is called.
+    private List<Task> raceTasks;
     private RaceState state = RaceState.STARTING; // Race's current state
     private Message message; // Message to refer to and update while racing
     private boolean cancelled = false;
     // -----------------
 
-    protected DictionaryRaceImpl(String guildId, String channelId, Member startingMember) {
-        this.guildId = guildId;
+    protected DictionaryRaceImpl(String channelId, Member startingMember) {
         this.channelId = channelId;
-        DictionaryAPI.getWords(this,10);
         players.put(startingMember.getId(), new Racer(startingMember));
-    }
-
-    // ---- Callback Overrides ----
-    @Override
-    public void onFailure(@NotNull Call call, IOException e) {
-        e.printStackTrace();
-    }
-
-    @Override
-    public void onResponse(Call call, Response response) throws IOException {
-        String word = call.request().header("word");
-        List<String> definitions = new ArrayList<>();
-
-        if (!response.isSuccessful()) {
-            definitions.add("No definition found for this one :(");
-        } else {
-            definitions = DictionaryAPI.parseResponse(response);
-        }
-        raceWords.add(new CleanWord(word, definitions));
     }
 
     // ---- Command Overrides ----
@@ -81,14 +55,6 @@ public final class DictionaryRaceImpl implements DictionaryRace {
     }
 
     @Override
-    public void incrementWords(String racerId) {
-        Racer racer = players.get(racerId);
-        if (racer != null) {
-            racer.incrementWords();
-        }
-    }
-
-    @Override
     public void setState(RaceState state) {
         this.state = state;
     }
@@ -101,6 +67,31 @@ public final class DictionaryRaceImpl implements DictionaryRace {
     @Override
     public void setMessage(Message message) {
         this.message = message;
+    }
+
+    @Override
+    public void setTasks(List<Task> tasks) {
+        raceTasks = tasks;
+    }
+
+    /**
+     * @return True = Race complete due to user completing all tasks.
+     *         False = Race continues on.
+     */
+    @Override
+    public boolean evalAnswer(String racerId, String answer) {
+        if (players.containsKey(racerId)) {
+            for (Task t : raceTasks) {
+                if (t.getAnswer().equalsIgnoreCase(answer) && !t.haveCompleted().contains(racerId)) {
+                    t.completedBy(racerId);
+                    if (players.get(racerId).plusTasksCompleted()) {
+                        raceEndFuture.cancel(false);
+                        return true;
+                    }
+                }
+            }
+        }
+        return false;
     }
 
     @Override
@@ -123,8 +114,8 @@ public final class DictionaryRaceImpl implements DictionaryRace {
 
     @NotNull
     @Override
-    public List<DictionaryWord> getWords() {
-        return raceWords;
+    public List<Task> getTasks() {
+        return raceTasks;
     }
 
     @NotNull
@@ -158,23 +149,17 @@ public final class DictionaryRaceImpl implements DictionaryRace {
         // Calculate the winner
         List<Racer> sortedRacers = getPlayers()
                 .stream()
-                .sorted(Comparator.comparing(Racer::getWordsTyped).reversed())
+                .sorted(Comparator.comparing(Racer::getTasksCompleted).reversed())
                 .collect(Collectors.toList());
 
         for (int i = 0; i < sortedRacers.size(); ++i) {
             leaderboard.append("**#").append(i + 1).append("** <@")
                     .append(sortedRacers.get(i).member.getId())
-                    .append("> → Words Typed: ")
-                    .append(sortedRacers.get(i).getWordsTyped()).append("\n");
+                    .append("> → Tasks Completed: ")
+                    .append(sortedRacers.get(i).getTasksCompleted()).append("\n");
         }
 
         return leaderboard.toString();
-    }
-
-    @NotNull
-    @Override
-    public String getGuildId() {
-        return guildId;
     }
 
     @NotNull

@@ -1,11 +1,13 @@
 package dracer.styling;
 
 import dracer.racing.DictionaryRace;
+import dracer.racing.tasks.Task;
 import dracer.util.RaceTime;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.entities.MessageEmbed;
 
 import java.time.Instant;
+import java.util.List;
 
 public class Embed extends EmbedBuilder {
     public enum EmbedType {
@@ -30,8 +32,8 @@ public class Embed extends EmbedBuilder {
 
         switch (type) {
             case STARTING -> starting();
-            case ONGOING -> ongoingRaceStats();
-            case FINISHSEQ -> finished();
+            case ONGOING -> ongoingRaceStats(race.getTasks());
+            case FINISHSEQ -> finished(race.getTasks());
         }
     }
 
@@ -43,7 +45,6 @@ public class Embed extends EmbedBuilder {
             secondsToStart = time.getSecondsToStartOfRace() + 1;
         }
 
-
         setTitle("A wild dictionary race appears! Type `dcr.join` to join!");
         StringBuilder playersList = new StringBuilder(); // Get current players
         race.getPlayers().forEach(racer -> playersList.append("<@").append(racer.member.getId()).append(">\n"));
@@ -53,19 +54,27 @@ public class Embed extends EmbedBuilder {
         setTimestamp(Instant.now());
     }
 
-    private void ongoingRaceStats() {
+    private void ongoingRaceStats(List<Task> tasks) {
         setTitle("The race is in progress:");
         setDescription(race.getLeaderboard());
+
+        for (Task t : tasks) {
+            addField(t.getQuestion(), "", false);
+        }
+
         setFooter("EmojID: " + race.getEmojID());
         setTimestamp(Instant.now());
-        setImage("attachment://image.png");
     }
 
-    private void finished() {
+    private void finished(List<Task> tasks) {
         setTitle("The race has finished. Final Standings:");
         setDescription(race.getLeaderboard());
+
+        for (Task t : tasks) {
+            addField(t.getQuestion(), "Answer: " + t.getAnswer(), false);
+        }
+
         setFooter("EmojID: " + race.getEmojID());
         setTimestamp(Instant.now());
-        setImage("attachment://image.png");
     }
 }

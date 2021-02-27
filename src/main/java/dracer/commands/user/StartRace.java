@@ -19,7 +19,7 @@ public class StartRace implements Command {
     @Override
     public void run() {
         if (!RaceHandler.isRaceActive(event.getChannel().getId())) {
-            RaceHandler.addRace(event.getGuild(), event.getChannel(), event.getMember());
+            RaceHandler.addRace(event.getChannel(), event.getMember());
         } else {
             // noinspection ConstantConditions
             event.getChannel().sendMessage("<@" + event.getMember().getId() + "> A race is already running in this channel!").queue();

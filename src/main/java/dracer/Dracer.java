@@ -27,6 +27,7 @@ public abstract class Dracer {
     public static final int AVAILABLE_CORES = Math.max(Runtime.getRuntime().availableProcessors(), 2);
 
     // --- Racing Constants ---
+    public static final int TASK_COUNT = 10;
     public static final int GRACE_PERIOD = 20;
     public static final int RACE_LENGTH = 60;
     public static final int TOTAL_LENGTH = GRACE_PERIOD + RACE_LENGTH;

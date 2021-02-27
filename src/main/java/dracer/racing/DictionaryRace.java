@@ -1,17 +1,16 @@
 package dracer.racing;
 
 import dracer.racing.entities.Racer;
-import dracer.racing.words.DictionaryWord;
+import dracer.racing.tasks.Task;
 import dracer.util.RaceTime;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
-import okhttp3.Callback;
 
 import javax.annotation.Nonnull;
 import java.util.List;
 import java.util.concurrent.ScheduledFuture;
 
-public interface DictionaryRace extends Callback {
+public interface DictionaryRace {
     // --- Const ---
     int RACE_TASKS = 10;
     // -----------------
@@ -20,13 +19,13 @@ public interface DictionaryRace extends Callback {
         STARTING, IN_PROGRESS, FINISHED
     }
 
-    void incrementWords(String racerId);
-
     void setState(RaceState state);
 
     void setEndFuture(ScheduledFuture<Void> future);
 
     void setMessage(Message message);
+
+    void setTasks(List<Task> tasks);
 
     void setTime();
 
@@ -38,7 +37,9 @@ public interface DictionaryRace extends Callback {
 
     boolean isCancelled();
 
-    @Nonnull List<DictionaryWord> getWords();
+    boolean evalAnswer(String racerId, String answer);
+
+    @Nonnull List<Task> getTasks();
 
     @Nonnull List<Racer> getPlayers();
 
@@ -49,8 +50,6 @@ public interface DictionaryRace extends Callback {
     @Nonnull Message getMessage();
 
     @Nonnull String getLeaderboard();
-
-    @Nonnull String getGuildId();
 
     @Nonnull String getChannelId();
 

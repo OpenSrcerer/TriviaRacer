@@ -18,13 +18,13 @@ import java.util.Arrays;
 /**
  * All event initiations are managed by this class.
  */
+@SuppressWarnings("ConstantConditions")
 public class EventDelegate extends ListenerAdapter {
     @Override
     public void onReady(@Nonnull ReadyEvent event) {
         Dracer.dracerInst.getPresence().setPresence(OnlineStatus.ONLINE, Activity.playing("turbotastic!"));
     }
 
-    @SuppressWarnings("ConstantConditions")
     @Override
     public void onGuildMessageReceived(@Nonnull final GuildMessageReceivedEvent event) {
         if (!validateEvent(event)) { // If the event is invalid or the member is a bot, don't reply
@@ -32,7 +32,7 @@ public class EventDelegate extends ListenerAdapter {
         }
 
         if (RaceHandler.isChannelRaceMode(event.getChannel().getId())) {
-            RaceHandler.incrementWordsForRacer(event.getChannel().getId(), event.getMember().getId());
+            RaceHandler.evaluateAnswer(event.getChannel().getId(), event.getMember().getId(), event.getMessage().getContentRaw());
             event.getMessage().delete().queue(null, null);
             return;
         }
