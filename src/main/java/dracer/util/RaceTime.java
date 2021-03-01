@@ -31,11 +31,11 @@ public class RaceTime {
     }
 
     // Call while in progress
-    public long getSecondsPreEndOfRace(int secondsBefore) {
-        return ChronoUnit.SECONDS.between(raceCall, endOfRace.minusSeconds(secondsBefore));
+    public long getSecondsPostGrace(int secondsAfter) {
+        return ChronoUnit.SECONDS.between(raceCall, startOfRace.plusSeconds(secondsAfter));
     }
 
-    public boolean isTemporalsSet() {
+    public boolean areTemporalsSet() {
         return temporalsSet;
     }
 }

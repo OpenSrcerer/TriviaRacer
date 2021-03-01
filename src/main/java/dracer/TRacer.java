@@ -31,7 +31,7 @@ public abstract class TRacer {
     public static final int TASK_COUNT = 10;
     public static final int GRACE_PERIOD = 20;
     public static final int READING_TIME = 15;
-    public static final int ANSWER_TIME = 5;
+    public static final int ANSWER_TIME = 7;
     public static final int ANSWER_VIEWING_TIME = 7;
     public static final int TRIVIA_QUESTION_TOTAL = READING_TIME + ANSWER_TIME + ANSWER_VIEWING_TIME;
     public static final int RACE_LENGTH = TASK_COUNT * TRIVIA_QUESTION_TOTAL;

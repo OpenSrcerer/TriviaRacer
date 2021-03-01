@@ -57,7 +57,7 @@ public class Embed extends EmbedBuilder {
         long secondsToStart = 20;
 
         RaceTime time = race.getTime();
-        if (time.isTemporalsSet()) {
+        if (time.areTemporalsSet()) {
             secondsToStart = time.getSecondsToStartOfRace() + 1;
         }
 
@@ -100,9 +100,10 @@ public class Embed extends EmbedBuilder {
 
         if (!isAnswerable) {
             setFooter("Get ready to answer!");
+            setImage("https://raw.githubusercontent.com/OpenSrcerer/TriviaRacer/main/src/main/java/dracer/img/triviaquestiontimer.gif?token=ALCYYNTMPE3DKYC5XNSISHLAIX5ZA");
+        } else {
+            setImage("https://raw.githubusercontent.com/OpenSrcerer/TriviaRacer/main/src/main/java/dracer/img/answertimer.gif?token=ALCYYNXLHJ7KTIYAXLTOVFLAIZEGK");
         }
-
-        setImage("https://raw.githubusercontent.com/OpenSrcerer/TriviaRacer/main/src/main/java/dracer/img/triviaquestiontimer.gif?token=ALCYYNTMPE3DKYC5XNSISHLAIX5ZA");
     }
 
     private void triviaQuestionAfter(TriviaRace race) {

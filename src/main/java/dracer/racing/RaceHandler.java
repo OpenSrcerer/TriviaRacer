@@ -142,8 +142,7 @@ public final class RaceHandler {
         List<ScheduledFuture<?>> futures = new ArrayList<>();
 
         // Schedule Trivia Questions
-        int secondsPrior = TRacer.RACE_LENGTH;
-
+        int secondsAfter = 0;
         for (int task = 0; task < TRacer.TASK_COUNT; ++task) {
             futures.add(TRacer.RACE_EXECUTOR.schedule(() -> {
                 race.getMessage().delete().queue();
@@ -151,20 +150,20 @@ public final class RaceHandler {
                 race.getChannel().sendMessage(getAllRacerLanes(race))
                         .embed(EmbedFactory(race, Embed.EmbedType.TRIVIA_QUESTION))
                         .queue(race::setMessage);
-            }, race.getTime().getSecondsPreEndOfRace(secondsPrior), TimeUnit.SECONDS));
+            }, race.getTime().getSecondsPostGrace(secondsAfter), TimeUnit.SECONDS));
 
             futures.add(TRacer.RACE_EXECUTOR.schedule(() ->
                     race.getMessage().editMessage(getAllRacerLanes(race))
                             .embed(EmbedFactory(race, Embed.EmbedType.TRIVIA_QUESTION_ANSWERABLE))
                             .flatMap(message -> addReactions(race.getTasks().get(race.getCurrentTask()), message)).queue(),
-                    race.getTime().getSecondsPreEndOfRace(secondsPrior - TRacer.READING_TIME), TimeUnit.SECONDS));
+                    race.getTime().getSecondsPostGrace(secondsAfter + TRacer.READING_TIME), TimeUnit.SECONDS));
 
             futures.add(TRacer.RACE_EXECUTOR.schedule(() ->
                     race.getMessage().editMessage(getAllRacerLanes(race))
                             .embed(EmbedFactory(race, Embed.EmbedType.TRIVIA_QUESTION_AFTER)).queue(),
-                    race.getTime().getSecondsPreEndOfRace(secondsPrior - TRacer.READING_TIME + TRacer.ANSWER_TIME), TimeUnit.SECONDS));
+                    race.getTime().getSecondsPostGrace(secondsAfter + TRacer.READING_TIME + TRacer.ANSWER_TIME), TimeUnit.SECONDS));
 
-            secondsPrior -= TRacer.TRIVIA_QUESTION_TOTAL;
+            secondsAfter += TRacer.TRIVIA_QUESTION_TOTAL;
         }
 
         return futures;
