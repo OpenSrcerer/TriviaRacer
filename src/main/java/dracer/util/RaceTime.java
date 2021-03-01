@@ -32,7 +32,7 @@ public class RaceTime {
 
     // Call while in progress
     public long getSecondsPreEndOfRace(int secondsBefore) {
-        return ChronoUnit.SECONDS.between(startOfRace, endOfRace.minusSeconds(secondsBefore));
+        return ChronoUnit.SECONDS.between(raceCall, endOfRace.minusSeconds(secondsBefore));
     }
 
     public boolean isTemporalsSet() {

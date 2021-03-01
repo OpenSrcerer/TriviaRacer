@@ -81,8 +81,7 @@ public final class RaceHandler {
 
     public static void startSequence(TextChannel channel, TriviaRace race) {
         // Race Start Notification
-        channel.sendMessage(getAllRacerLanes(race))
-                .embed(EmbedFactory(race, Embed.EmbedType.STARTING))
+        channel.sendMessage(EmbedFactory(race, Embed.EmbedType.STARTING))
                 .map(message -> {
                     race.setMessage(message);
                     doRacePrep(race);
@@ -121,6 +120,8 @@ public final class RaceHandler {
                 race.getTime().getSecondsPreGrace(1), TimeUnit.SECONDS);
 
         raceStart(race, taskFuture);
+        scheduleTriviaQuestions(race);
+        finishSequence(race);
     }
 
     private static void raceStart(TriviaRace race, Future<List<Task>> taskFuture) {
@@ -129,44 +130,42 @@ public final class RaceHandler {
             try {
                 race.setTasks(taskFuture.get(1, TimeUnit.SECONDS));
                 race.setState(TriviaRace.RaceState.IN_PROGRESS);
-                race.getMessage().delete().queue();
             } catch (Exception ex) {
                 lgr.error("Error:", ex);
                 race.getChannel().sendMessage("Race was unable to start due to an API problem. Please try again later.").queue();
                 removeRace(race.getChannelId());
             }
         }, TRacer.GRACE_PERIOD, TimeUnit.SECONDS);
-
-        scheduleTriviaQuestions(race);
     }
 
     private static void scheduleTriviaQuestions(TriviaRace race) {
         // Schedule Trivia Questions
         int secondsPrior = TRacer.RACE_LENGTH;
+
         for (int task = 0; task < TRacer.TASK_COUNT; ++task) {
             TRacer.RACE_EXECUTOR.schedule(() -> {
+                race.getMessage().delete().queue();
                 race.incrementCurrentTask();
                 race.getChannel().sendMessage(getAllRacerLanes(race))
                         .embed(EmbedFactory(race, Embed.EmbedType.TRIVIA_QUESTION))
-                        .queue();
+                        .queue(race::setMessage);
                 }, race.getTime().getSecondsPreEndOfRace(secondsPrior), TimeUnit.SECONDS);
 
             TRacer.RACE_EXECUTOR.schedule(() -> {
+                race.getMessage().delete().queue();
                 race.getChannel().sendMessage(getAllRacerLanes(race))
                         .embed(EmbedFactory(race, Embed.EmbedType.TRIVIA_QUESTION_AFTER))
-                        .queue();
+                        .queue(race::setMessage);
                 }, race.getTime().getSecondsPreEndOfRace(secondsPrior - 15), TimeUnit.SECONDS);
 
             secondsPrior -= 20;
         }
-
-        finishSequence(race);
     }
 
     private static void finishSequence(TriviaRace race) {
         // Schedule Race End
         race.setEndFuture(TRacer.RACE_EXECUTOR.schedule(() -> {
-            race.getMessage().getTextChannel().sendMessage(EmbedFactory(race, Embed.EmbedType.FINISHSEQ)).queue();
+            race.getMessage().editMessage(EmbedFactory(race, Embed.EmbedType.FINISHSEQ)).queue();
             race.setState(TriviaRace.RaceState.FINISHED);
             removeRace(race.getChannelId());
             lgr.info("Finished race with ID:" + race.getEmojID());

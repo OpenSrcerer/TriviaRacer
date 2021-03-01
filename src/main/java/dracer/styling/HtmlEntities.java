@@ -16,7 +16,6 @@ public class HtmlEntities
     {
         map.put("&quot;", (char) 34);
         map.put("&amp;", (char) 38);
-        map.put("&#039;", (char) 39);
         map.put("&apos;", (char) 39);
         map.put("&rsquo;", (char) 39);
         map.put("&lt;", (char) 60);
@@ -196,7 +195,7 @@ public class HtmlEntities
     public static String decode(String decode)
     {
         StringBuilder str = new StringBuilder(decode);
-        Matcher m = Pattern.compile("&[A-Za-z]+;").matcher(str);
+        Matcher m = Pattern.compile("&[A-Za-z0-9]+;").matcher(str);
         String replaceStr;
 
         int matchPointer = 0;
@@ -208,6 +207,6 @@ public class HtmlEntities
             matchPointer = m.start() + replaceStr.length();
         }
 
-        return str.toString();
+        return str.toString().replaceAll("&#039;", "'");
     }
 }

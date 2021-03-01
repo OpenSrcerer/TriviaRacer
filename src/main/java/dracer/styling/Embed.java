@@ -13,7 +13,8 @@ import java.util.Set;
 
 public class Embed extends EmbedBuilder {
     public enum EmbedType {
-        STARTING, TRIVIA_QUESTION, TRIVIA_QUESTION_AFTER, FINISHSEQ
+        STARTING, TRIVIA_QUESTION, TRIVIA_QUESTION_AFTER, FINISHSEQ,
+        SCIENCE, ENTERTAINMENT, OTHER, HELP
     }
 
     /**
@@ -39,6 +40,10 @@ public class Embed extends EmbedBuilder {
             case TRIVIA_QUESTION -> triviaQuestion(race);
             case TRIVIA_QUESTION_AFTER -> triviaQuestionAfter(race);
             case FINISHSEQ -> finished();
+            case OTHER -> otherCategories();
+            case SCIENCE -> scienceCategories();
+            case ENTERTAINMENT -> entertainmentCategories();
+            case HELP -> help();
         }
     }
 
@@ -50,7 +55,13 @@ public class Embed extends EmbedBuilder {
             secondsToStart = time.getSecondsToStartOfRace() + 1;
         }
 
-        setTitle("A wild trivia race appears! Type `tcr.join` to join!");
+        if (race.getCategory() == Task.TaskCategory.ALL_CATEGORIES) {
+            setTitle("A wild trivia race appears! Type `tcr.join` to join!");
+        } else {
+            setTitle("A wild trivia race appears! Type `tcr.join` to join!");
+            setDescription("Specific Category: __" + race.getCategory().name + "__");
+        }
+
         StringBuilder playersList = new StringBuilder(); // Get current players
         race.getPlayers().forEach(racer -> playersList.append("<@").append(racer.member.getId()).append(">\n"));
         addField("Current Participants:", playersList.toString(), false); // Show current players
@@ -82,10 +93,16 @@ public class Embed extends EmbedBuilder {
         Set<String> taskCompleters = currentTask.haveCompleted();
 
         setTitle("Answers for Question " + (race.getCurrentTask() + 1) + ": " + currentTask.getQuestion());
-        setDescription("Correct Answer: " + currentTask.getCorrectAnswer());
+        setDescription("► Correct Answer: __**" + currentTask.getCorrectAnswer() + "**__");
 
         if (taskCompleters.isEmpty()) {
             addField("Wow, nobody got it right. 😢", "Better luck next time!", false);
+        } else if (taskCompleters.size() == 1 && race.getPlayers().size() == 1) {
+            addField("Oh snap! Only one person got it right! 👍 Fantastic job.",
+                    "<@" + taskCompleters.iterator().next() + "> Considering you're playing solo, this isn't much of a surprise.", false);
+        } else if (taskCompleters.size() == 1 && race.getPlayers().size() > 1) {
+            addField("It seems that one user beat you all.",
+                    "Or perhaps + <@" + taskCompleters.iterator().next() + "> + just got lucky.", false);
         } else {
             StringBuilder players = new StringBuilder();
             for (String player : taskCompleters) {
@@ -100,5 +117,55 @@ public class Embed extends EmbedBuilder {
         setDescription(race.getLeaderboard());
         setFooter("EmojID: " + race.getEmojID());
         setTimestamp(Instant.now());
+    }
+
+    private void otherCategories() {
+        setTitle("Other Categories:");
+
+        setDescription(
+                "ID: **" + Task.TaskCategory.ALL_CATEGORIES.ordinal() + "** → " + Task.TaskCategory.ALL_CATEGORIES.name + "\n" +
+                "ID: **" + Task.TaskCategory.GENERAL_KNOWLEDGE.ordinal() + "** → " + Task.TaskCategory.GENERAL_KNOWLEDGE.name + "\n" +
+                "ID: **" + Task.TaskCategory.MYTHOLOGY.ordinal() + "** → " + Task.TaskCategory.MYTHOLOGY.name + "\n" +
+                "ID: **" + Task.TaskCategory.SPORTS.ordinal() + "** → " + Task.TaskCategory.SPORTS.name + "\n" +
+                "ID: **" + Task.TaskCategory.GEOGRAPHY.ordinal() + "** → " + Task.TaskCategory.GEOGRAPHY.name + "\n" +
+                "ID: **" + Task.TaskCategory.HISTORY.ordinal() + "** → " + Task.TaskCategory.HISTORY.name + "\n" +
+                "ID: **" + Task.TaskCategory.POLITICS.ordinal() + "** → " + Task.TaskCategory.POLITICS.name + "\n" +
+                "ID: **" + Task.TaskCategory.ART.ordinal() + "** → " + Task.TaskCategory.ART.name + "\n" +
+                "ID: **" + Task.TaskCategory.CELEBRITIES.ordinal() + "** → " + Task.TaskCategory.CELEBRITIES.name + "\n" +
+                "ID: **" + Task.TaskCategory.ANIMALS.ordinal() + "** → " + Task.TaskCategory.ANIMALS.name + "\n" +
+                "ID: **" + Task.TaskCategory.VEHICLES.ordinal() + "** → " + Task.TaskCategory.VEHICLES.name + "\n"
+        );
+    }
+
+    private void scienceCategories() {
+        setTitle("Science Categories:");
+
+        setDescription(
+                "ID: **" + Task.TaskCategory.SCIENCE_AND_NATURE.ordinal() + "** → " + Task.TaskCategory.SCIENCE_AND_NATURE.name + "\n" +
+                "ID: **" + Task.TaskCategory.SCIENCE_COMPUTERS.ordinal() + "** → " + Task.TaskCategory.SCIENCE_COMPUTERS.name + "\n" +
+                "ID: **" + Task.TaskCategory.SCIENCE_MATH.ordinal() + "** → " + Task.TaskCategory.SCIENCE_MATH.name + "\n" +
+                "ID: **" + Task.TaskCategory.SCIENCE_GADGETS.ordinal() + "** → " + Task.TaskCategory.SCIENCE_GADGETS.name + "\n"
+        );
+    }
+
+    private void entertainmentCategories() {
+        setTitle("Entertainment Categories:");
+
+        setDescription(
+                "ID: **" + Task.TaskCategory.ENTERTAINMENT_BOOKS.ordinal() + "** → " + Task.TaskCategory.ENTERTAINMENT_BOOKS.name + "\n" +
+                "ID: **" + Task.TaskCategory.ENTERTAINMENT_FILM.ordinal() + "** → " + Task.TaskCategory.ENTERTAINMENT_FILM.name + "\n" +
+                "ID: **" + Task.TaskCategory.ENTERTAINMENT_MUSIC.ordinal() + "** → " + Task.TaskCategory.ENTERTAINMENT_MUSIC.name + "\n" +
+                "ID: **" + Task.TaskCategory.ENTERTAINMENT_MUSICALS_THEATRES.ordinal() + "** → " + Task.TaskCategory.ENTERTAINMENT_MUSICALS_THEATRES.name + "\n" +
+                "ID: **" + Task.TaskCategory.ENTERTAINMENT_TELEVISION.ordinal() + "** → " + Task.TaskCategory.ENTERTAINMENT_TELEVISION.name + "\n" +
+                "ID: **" + Task.TaskCategory.ENTERTAINMENT_VIDEO_GAMES.ordinal() + "** → " + Task.TaskCategory.ENTERTAINMENT_VIDEO_GAMES.name + "\n" +
+                "ID: **" + Task.TaskCategory.ENTERTAINMENT_BOARD_GAMES.ordinal() + "** → " + Task.TaskCategory.ENTERTAINMENT_BOARD_GAMES.name + "\n" +
+                "ID: **" + Task.TaskCategory.ENTERTAINMENT_COMICS.ordinal() + "** → " + Task.TaskCategory.ENTERTAINMENT_COMICS.name + "\n" +
+                "ID: **" + Task.TaskCategory.ENTERTAINMENT_ANIME_MANGA.ordinal() + "** → " + Task.TaskCategory.ENTERTAINMENT_ANIME_MANGA.name + "\n" +
+                "ID: **" + Task.TaskCategory.ENTERTAINMENT_CARTOONS_ANIMATIONS.ordinal() + "** → " + Task.TaskCategory.ENTERTAINMENT_CARTOONS_ANIMATIONS.name + "\n"
+        );
+    }
+
+    private void help() {
+
     }
 }

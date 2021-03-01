@@ -5,6 +5,7 @@ import dracer.commands.user.JoinRace;
 import dracer.commands.user.LeaveRace;
 import dracer.commands.user.StartRace;
 import dracer.racing.RaceHandler;
+import dracer.styling.Embed;
 import net.dv8tion.jda.api.OnlineStatus;
 import net.dv8tion.jda.api.entities.Activity;
 import net.dv8tion.jda.api.events.ReadyEvent;
@@ -45,6 +46,10 @@ public class EventDelegate extends ListenerAdapter {
             case "tcr.start" -> new StartRace(event, arguments);
             case "tcr.join" -> new JoinRace(event);
             case "tcr.leave" -> new LeaveRace(event);
+            case "tcr.help" -> event.getChannel().sendMessage(Embed.EmbedFactory(null, Embed.EmbedType.HELP)).queue();
+            case "tcr.other" -> event.getChannel().sendMessage(Embed.EmbedFactory(null, Embed.EmbedType.OTHER)).queue();
+            case "tcr.science" -> event.getChannel().sendMessage(Embed.EmbedFactory(null, Embed.EmbedType.SCIENCE)).queue();
+            case "tcr.entertainment" -> event.getChannel().sendMessage(Embed.EmbedFactory(null, Embed.EmbedType.ENTERTAINMENT)).queue();
         }
     }
 
