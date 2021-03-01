@@ -178,7 +178,7 @@ public final class TriviaRaceImpl implements TriviaRace {
             leaderboard.append("**#").append(i + 1).append("** <@")
                     .append(sortedRacers.get(i).member.getId())
                     .append("> → Correct Answers: ")
-                    .append(sortedRacers.get(i).getTasksCompleted()).append("\n");
+                    .append(sortedRacers.get(i).getTasksCompleted()).append(" out of 10\n");
         }
 
         return leaderboard.toString();

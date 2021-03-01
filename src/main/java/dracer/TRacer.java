@@ -13,7 +13,9 @@ import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import net.dv8tion.jda.api.utils.data.DataArray;
 
 import javax.annotation.Nonnull;
+import java.util.Arrays;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.concurrent.*;
 
 public abstract class TRacer {
@@ -28,11 +30,25 @@ public abstract class TRacer {
     // --- Racing Constants ---
     public static final int TASK_COUNT = 10;
     public static final int GRACE_PERIOD = 20;
-    public static final int RACE_LENGTH = TASK_COUNT * 5 + TASK_COUNT * 15;
+    public static final int READING_TIME = 15;
+    public static final int ANSWER_TIME = 5;
+    public static final int ANSWER_VIEWING_TIME = 7;
+    public static final int TRIVIA_QUESTION_TOTAL = READING_TIME + ANSWER_TIME + ANSWER_VIEWING_TIME;
+    public static final int RACE_LENGTH = TASK_COUNT * TRIVIA_QUESTION_TOTAL;
     public static final int TOTAL_LENGTH = GRACE_PERIOD + RACE_LENGTH;
 
-    // --- Files ---
+    // --- Files & Lists ---
     public static DataArray emojis;
+    private static final List<String> cars = Arrays.asList(
+            "<:wackymobile:815945750823174185>",
+            "<:streetfuturistic:815945757588586517>",
+            "<:stationwagon:815945754153320478>",
+            "<:sedan:815945756581560320>",
+            "<:cooper:815945753977159691>",
+            "<:compact2:815945757689118830>",
+            "<:compact:815945659114586112>",
+            "<:beetle:815945751883808780>"
+    );
     // ***************************************************************
 
     /**
@@ -113,6 +129,10 @@ public abstract class TRacer {
             builder.append(emojis.getObject(ThreadLocalRandom.current().nextInt(4032)).getString("emoji"));
         }
         return builder.toString();
+    }
+
+    public static String getRandomCar() {
+        return cars.get(ThreadLocalRandom.current().nextInt(cars.size()));
     }
 
     /**

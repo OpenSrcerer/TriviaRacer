@@ -45,6 +45,7 @@ public class EventDelegate extends ListenerAdapter {
             case "tcr.join" -> new JoinRace(event);
             case "tcr.leave" -> new LeaveRace(event);
             case "tcr.help" -> event.getChannel().sendMessage(Embed.EmbedFactory(null, Embed.EmbedType.HELP)).queue();
+            // case "tcr.vote" -> event.getChannel().sendMessage(Embed.EmbedFactory(null, Embed.EmbedType.VOTE)).queue(); Disabled Temporarily
             case "tcr.other" -> event.getChannel().sendMessage(Embed.EmbedFactory(null, Embed.EmbedType.OTHER)).queue();
             case "tcr.science" -> event.getChannel().sendMessage(Embed.EmbedFactory(null, Embed.EmbedType.SCIENCE)).queue();
             case "tcr.entertainment" -> event.getChannel().sendMessage(Embed.EmbedFactory(null, Embed.EmbedType.ENTERTAINMENT)).queue();

@@ -10,13 +10,12 @@ public class Racer {
 
     public Racer(Member member) {
         this.member = member;
-        this.lane = new RacingLane("🍕");
+        this.lane = new RacingLane(TRacer.getRandomCar());
     }
 
-    public boolean plusTasksCompleted() {
+    public void plusTasksCompleted() {
         ++tasksCompleted;
         lane.incrementPosition();
-        return tasksCompleted == TRacer.TASK_COUNT;
     }
 
     public int getTasksCompleted() {

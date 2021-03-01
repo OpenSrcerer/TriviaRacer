@@ -15,8 +15,9 @@ import java.util.Set;
 public class Embed extends EmbedBuilder {
     public enum EmbedType {
         STARTING, CANCELLED, FINISHED,
-        TRIVIA_QUESTION, TRIVIA_QUESTION_AFTER,
-        SCIENCE, ENTERTAINMENT, OTHER, HELP
+        TRIVIA_QUESTION, TRIVIA_QUESTION_ANSWERABLE, TRIVIA_QUESTION_AFTER,
+        SCIENCE, ENTERTAINMENT, OTHER,
+        HELP, VOTE
     }
 
     /**
@@ -40,13 +41,15 @@ public class Embed extends EmbedBuilder {
         switch (type) {
             case STARTING -> starting();
             case CANCELLED -> cancelled(race.getPlayers().get(0).member.getId());
-            case TRIVIA_QUESTION -> triviaQuestion(race);
+            case TRIVIA_QUESTION -> triviaQuestion(race, false);
+            case TRIVIA_QUESTION_ANSWERABLE -> triviaQuestion(race, true);
             case TRIVIA_QUESTION_AFTER -> triviaQuestionAfter(race);
             case FINISHED -> finished();
             case OTHER -> otherCategories();
             case SCIENCE -> scienceCategories();
             case ENTERTAINMENT -> entertainmentCategories();
             case HELP -> help();
+            case VOTE -> vote();
         }
     }
 
@@ -59,16 +62,16 @@ public class Embed extends EmbedBuilder {
         }
 
         if (race.getCategory() == Task.TaskCategory.ALL_CATEGORIES) {
-            setTitle("<:tB:643422476705202205> A wild trivia race appears! Type `tcr.join` to join!");
+            setTitle("🎺 A wild trivia race appears! Type `tcr.join` to join!");
         } else {
-            setTitle("<:tB:643422476705202205> A wild trivia race appears! Type `tcr.join` to join!");
+            setTitle("🎺 A wild trivia race appears! Type `tcr.join` to join!");
             setDescription("Specific Category: __" + race.getCategory().name + "__");
         }
 
         StringBuilder playersList = new StringBuilder(); // Get current players
         race.getPlayers().forEach(racer -> playersList.append("<@").append(racer.member.getId()).append(">\n"));
-        addField("Current Participants:", playersList.toString(), false); // Show current players
-        addField("Time to start:", secondsToStart + " seconds", false);
+        addField("<:tB:643422476705202205> Current Participants:", playersList.toString(), false); // Show current players
+        addField("⏱ Time to start:", secondsToStart + " seconds", false);
         setFooter("EmojID: " + race.getEmojID()); // Show Race's ID
         setTimestamp(Instant.now());
     }
@@ -78,7 +81,7 @@ public class Embed extends EmbedBuilder {
         setDescription("The race started by <@" + userId + "> was cancelled. \nAnd I was already typing the answers out...");
     }
 
-    private void triviaQuestion(TriviaRace race) {
+    private void triviaQuestion(TriviaRace race, boolean isAnswerable) {
         Task currentTask = race.getTasks().get(race.getCurrentTask());
         String taskType = (currentTask instanceof MultipleChoiceTask) ? "Multiple Choice" : "True or False";
 
@@ -95,6 +98,10 @@ public class Embed extends EmbedBuilder {
             addField("Answer with:", "a) **True**\nb) **False**", false);
         }
 
+        if (!isAnswerable) {
+            setFooter("Get ready to answer!");
+        }
+
         setImage("https://raw.githubusercontent.com/OpenSrcerer/TriviaRacer/main/src/main/java/dracer/img/triviaquestiontimer.gif?token=ALCYYNTMPE3DKYC5XNSISHLAIX5ZA");
     }
 
@@ -109,7 +116,7 @@ public class Embed extends EmbedBuilder {
             addField("Wow, nobody got it right. 😢", "Better luck next time!", false);
         } else if (taskCompleters.size() == 1 && race.getPlayers().size() == 1) {
             addField("Oh snap! Only one person got it right! 👍 Fantastic job.",
-                    "<@" + taskCompleters.iterator().next() + "> Considering you're playing solo, this isn't much of a surprise.", false);
+                    "<@" + taskCompleters.iterator().next() + "> Considering you're playing solo, how about you bring some friends?", false);
         } else if (taskCompleters.size() == 1 && race.getPlayers().size() > 1) {
             addField("It seems that one user beat you all.",
                     "Or perhaps <@" + taskCompleters.iterator().next() + "> just got lucky.", false);
@@ -176,8 +183,8 @@ public class Embed extends EmbedBuilder {
     }
 
     private void help() {
-        setTitle("<:tB:643422476705202205> Help Menu - TriviaRacer", "https://github.com/opensrcerer/triviaracer");
-        setDescription("Hello there! Thank you for having me in your server.\n" +
+        setTitle("Help Menu - TriviaRacer", "https://github.com/opensrcerer/triviaracer");
+        setDescription("<:tB:643422476705202205> Hello there! Thank you for having me in your server.\n" +
                 "TriviaRacer is a bot used to have fun trivia matches with your friends. " +
                 "Here are all my commands:");
         addField("tcr.start `[categoryid]`", "Start a trivia race. " +
@@ -194,5 +201,17 @@ public class Embed extends EmbedBuilder {
 
         addField("Developed & Maintained with 💖 by", "<@178603029115830282>", false);
         setFooter("🚀 Gateway Ping: " + TRacer.tRacerInst.getGatewayPing());
+    }
+
+    private void vote() {
+        setTitle("Vote Menu - TriviaRacer");
+        setDescription(
+                """
+                Your support helps keep me alive! One vote could make a HUGE difference.
+                [@top.gg](https://top.gg/bot/700341788136833065/vote)
+                [@discord.boats](https://discord.boats/bot/700341788136833065/vote)
+                Thank you for voting. 💖 Have a great day.
+                """
+        );
     }
 }

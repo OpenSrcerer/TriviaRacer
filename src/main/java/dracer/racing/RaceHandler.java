@@ -70,9 +70,9 @@ public final class RaceHandler {
     private static String getAllRacerLanes(TriviaRace race) {
         StringBuilder builder = new StringBuilder();
         for (Racer r : race.getPlayers()) {
-            builder.append("|").append(r.lane.getLane()).append(" | <@").append(r.member.getId()).append(">\n");
+            builder.append(r.lane.getLane()).append(" [<@").append(r.member.getId()).append(">]\n");
         }
-        return builder.append("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━").toString();
+        return builder.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━").toString();
     }
 
     public static void startSequence(TextChannel channel, TriviaRace race) {
@@ -150,20 +150,21 @@ public final class RaceHandler {
                 race.incrementCurrentTask();
                 race.getChannel().sendMessage(getAllRacerLanes(race))
                         .embed(EmbedFactory(race, Embed.EmbedType.TRIVIA_QUESTION))
-                        .map(message -> {
-                            addReactions(race.getTasks().get(race.getCurrentTask()), message).queue();
-                            race.setMessage(message);
-                            return null;
-                        }).queue();
+                        .queue(race::setMessage);
             }, race.getTime().getSecondsPreEndOfRace(secondsPrior), TimeUnit.SECONDS));
 
-            futures.add(TRacer.RACE_EXECUTOR.schedule(() -> {
-                race.getMessage().delete().queue();
-                race.getChannel().sendMessage(getAllRacerLanes(race))
-                        .embed(EmbedFactory(race, Embed.EmbedType.TRIVIA_QUESTION_AFTER))
-                        .queue(race::setMessage);
-            }, race.getTime().getSecondsPreEndOfRace(secondsPrior - 15), TimeUnit.SECONDS));
-            secondsPrior -= 20;
+            futures.add(TRacer.RACE_EXECUTOR.schedule(() ->
+                    race.getMessage().editMessage(getAllRacerLanes(race))
+                            .embed(EmbedFactory(race, Embed.EmbedType.TRIVIA_QUESTION_ANSWERABLE))
+                            .flatMap(message -> addReactions(race.getTasks().get(race.getCurrentTask()), message)).queue(),
+                    race.getTime().getSecondsPreEndOfRace(secondsPrior - TRacer.READING_TIME), TimeUnit.SECONDS));
+
+            futures.add(TRacer.RACE_EXECUTOR.schedule(() ->
+                    race.getMessage().editMessage(getAllRacerLanes(race))
+                            .embed(EmbedFactory(race, Embed.EmbedType.TRIVIA_QUESTION_AFTER)).queue(),
+                    race.getTime().getSecondsPreEndOfRace(secondsPrior - TRacer.READING_TIME + TRacer.ANSWER_TIME), TimeUnit.SECONDS));
+
+            secondsPrior -= TRacer.TRIVIA_QUESTION_TOTAL;
         }
 
         return futures;
