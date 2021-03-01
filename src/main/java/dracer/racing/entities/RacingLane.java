@@ -1,6 +1,6 @@
 package dracer.racing.entities;
 
-import dracer.racing.DictionaryRaceImpl;
+import dracer.racing.TriviaRaceImpl;
 
 public class RacingLane {
     private static final StringBuilder raceTrack = new StringBuilder(
@@ -17,7 +17,7 @@ public class RacingLane {
     }
 
     public void incrementPosition() {
-        position = position + (1f / DictionaryRaceImpl.RACE_TASKS) * raceTrack.length();
+        position = position + (1f / TriviaRaceImpl.RACE_TASKS) * raceTrack.length();
     }
 
     public String getLane() {

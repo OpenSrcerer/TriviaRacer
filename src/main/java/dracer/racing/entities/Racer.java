@@ -1,6 +1,6 @@
 package dracer.racing.entities;
 
-import dracer.Dracer;
+import dracer.TRacer;
 import net.dv8tion.jda.api.entities.Member;
 
 public class Racer {
@@ -16,7 +16,7 @@ public class Racer {
     public boolean plusTasksCompleted() {
         ++tasksCompleted;
         lane.incrementPosition();
-        return tasksCompleted == Dracer.TASK_COUNT;
+        return tasksCompleted == TRacer.TASK_COUNT;
     }
 
     public int getTasksCompleted() {

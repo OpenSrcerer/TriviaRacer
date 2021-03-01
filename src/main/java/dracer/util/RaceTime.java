@@ -1,6 +1,6 @@
 package dracer.util;
 
-import dracer.Dracer;
+import dracer.TRacer;
 
 import java.time.Instant;
 import java.time.temporal.ChronoUnit;
@@ -16,8 +16,8 @@ public class RaceTime {
 
     public void setTemporals() {
         this.raceCall = Instant.now();
-        this.startOfRace = Instant.now().plusSeconds(Dracer.GRACE_PERIOD);
-        this.endOfRace = Instant.now().plusSeconds(Dracer.TOTAL_LENGTH);
+        this.startOfRace = Instant.now().plusSeconds(TRacer.GRACE_PERIOD);
+        this.endOfRace = Instant.now().plusSeconds(TRacer.TOTAL_LENGTH);
         temporalsSet = true;
     }
 
@@ -32,7 +32,7 @@ public class RaceTime {
 
     // Call while in progress
     public long getSecondsPreEndOfRace(int secondsBefore) {
-        return ChronoUnit.SECONDS.between(raceCall, endOfRace.minusSeconds(secondsBefore));
+        return ChronoUnit.SECONDS.between(startOfRace, endOfRace.minusSeconds(secondsBefore));
     }
 
     public boolean isTemporalsSet() {

@@ -1,7 +1,7 @@
 package dracer.commands.user;
 
 import dracer.commands.Command;
-import dracer.racing.DictionaryRace;
+import dracer.racing.TriviaRace;
 import dracer.racing.RaceHandler;
 import dracer.util.CommandHandler;
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
@@ -21,7 +21,7 @@ public class JoinRace implements Command {
     @Override
     public void run() {
         if (RaceHandler.isRaceActive(event.getChannel().getId())) {
-            DictionaryRace race = RaceHandler.addRacerToRace(event.getChannel().getId(), event.getMember());
+            TriviaRace race = RaceHandler.addRacerToRace(event.getChannel().getId(), event.getMember());
             if (race == null) {
                 event.getChannel().sendMessage("<@" + event.getMember().getId() + "> you are already part of this race!").queue();
             } else {

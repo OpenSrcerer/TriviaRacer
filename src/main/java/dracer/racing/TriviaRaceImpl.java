@@ -1,11 +1,12 @@
 package dracer.racing;
 
-import dracer.Dracer;
+import dracer.TRacer;
 import dracer.racing.entities.Racer;
 import dracer.racing.tasks.Task;
 import dracer.util.RaceTime;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
+import net.dv8tion.jda.api.entities.TextChannel;
 import org.jetbrains.annotations.NotNull;
 
 import javax.annotation.Nonnull;
@@ -13,25 +14,27 @@ import java.util.*;
 import java.util.concurrent.ScheduledFuture;
 import java.util.stream.Collectors;
 
-public final class DictionaryRaceImpl implements DictionaryRace {
-
+public final class TriviaRaceImpl implements TriviaRace {
     // --- Immutable ---
     private final Map<String, Racer> players = new HashMap<>();
     private final RaceTime time = new RaceTime(); // Holds the race's length and other timeframes where actions needs to be taken
+    private final Task.TaskCategory category;
     private final String channelId;
-    private final String emojID = Dracer.getRandomEmojis();
+    private final String emojID = TRacer.getRandomEmojis();
     // -----------------
 
     // --- Mutable ---
     private ScheduledFuture<Void> raceEndFuture; // A ScheduledFuture that represents when finishSequence() is called.
-    private List<Task> raceTasks;
+    private List<Task> raceTasks = new ArrayList<>();
     private RaceState state = RaceState.STARTING; // Race's current state
     private Message message; // Message to refer to and update while racing
+    private int currentTask = -1; // -1 = Not on a task yet
     private boolean cancelled = false;
     // -----------------
 
-    protected DictionaryRaceImpl(String channelId, Member startingMember) {
+    protected TriviaRaceImpl(Task.TaskCategory category, String channelId, Member startingMember) {
         this.channelId = channelId;
+        this.category = category;
         players.put(startingMember.getId(), new Racer(startingMember));
     }
 
@@ -74,24 +77,20 @@ public final class DictionaryRaceImpl implements DictionaryRace {
         raceTasks = tasks;
     }
 
-    /**
-     * @return True = Race complete due to user completing all tasks.
-     *         False = Race continues on.
-     */
     @Override
     public boolean evalAnswer(String racerId, String answer) {
-        if (players.containsKey(racerId)) {
-            for (Task t : raceTasks) {
-                if (t.getAnswer().equalsIgnoreCase(answer) && !t.haveCompleted().contains(racerId)) {
-                    t.completedBy(racerId);
-                    if (players.get(racerId).plusTasksCompleted()) {
-                        raceEndFuture.cancel(false);
-                        return true;
-                    }
-                }
+        Racer r = players.get(racerId);
+        if (r != null) {
+            Task t = raceTasks.get(currentTask);
+            if (!t.triedBy(racerId)) {
+                return false;
+            }
+            if (t.isCorrect(answer)) {
+                t.completedBy(racerId);
+                r.plusTasksCompleted();
             }
         }
-        return false;
+        return true;
     }
 
     @Override
@@ -105,6 +104,11 @@ public final class DictionaryRaceImpl implements DictionaryRace {
             raceEndFuture.cancel(false);
         }
         cancelled = true;
+    }
+
+    @Override
+    public void incrementCurrentTask() {
+        currentTask++;
     }
 
     @Override
@@ -122,6 +126,12 @@ public final class DictionaryRaceImpl implements DictionaryRace {
     @Override
     public List<Racer> getPlayers() {
         return new ArrayList<>(players.values());
+    }
+
+    @NotNull
+    @Override
+    public Task.TaskCategory getCategory() {
+        return category;
     }
 
     @NotNull
@@ -144,6 +154,12 @@ public final class DictionaryRaceImpl implements DictionaryRace {
 
     @NotNull
     @Override
+    public TextChannel getChannel() {
+        return message.getTextChannel();
+    }
+
+    @NotNull
+    @Override
     public String getLeaderboard() {
         StringBuilder leaderboard = new StringBuilder();
         // Calculate the winner
@@ -155,7 +171,7 @@ public final class DictionaryRaceImpl implements DictionaryRace {
         for (int i = 0; i < sortedRacers.size(); ++i) {
             leaderboard.append("**#").append(i + 1).append("** <@")
                     .append(sortedRacers.get(i).member.getId())
-                    .append("> → Tasks Completed: ")
+                    .append("> → Correct Answers: ")
                     .append(sortedRacers.get(i).getTasksCompleted()).append("\n");
         }
 
@@ -172,5 +188,10 @@ public final class DictionaryRaceImpl implements DictionaryRace {
     @Override
     public String getEmojID() {
         return emojID;
+    }
+
+    @Override
+    public int getCurrentTask() {
+        return currentTask;
     }
 }

@@ -1,6 +1,6 @@
 package dracer.events;
 
-import dracer.Dracer;
+import dracer.TRacer;
 import dracer.commands.user.JoinRace;
 import dracer.commands.user.LeaveRace;
 import dracer.commands.user.StartRace;
@@ -22,7 +22,7 @@ import java.util.Arrays;
 public class EventDelegate extends ListenerAdapter {
     @Override
     public void onReady(@Nonnull ReadyEvent event) {
-        Dracer.dracerInst.getPresence().setPresence(OnlineStatus.ONLINE, Activity.playing("turbotastic!"));
+        TRacer.tRacerInst.getPresence().setPresence(OnlineStatus.ONLINE, Activity.playing("turbotastic!"));
     }
 
     @Override
@@ -32,8 +32,9 @@ public class EventDelegate extends ListenerAdapter {
         }
 
         if (RaceHandler.isChannelRaceMode(event.getChannel().getId())) {
-            RaceHandler.evaluateAnswer(event.getChannel().getId(), event.getMember().getId(), event.getMessage().getContentRaw());
-            event.getMessage().delete().queue(null, null);
+            if (RaceHandler.evaluateAnswer(event.getChannel().getId(), event.getMember().getId(), event.getMessage().getContentRaw())) {
+                event.getMessage().addReaction("🎈").queue();
+            }
             return;
         }
 
@@ -41,9 +42,9 @@ public class EventDelegate extends ListenerAdapter {
         ArrayList<String> arguments = new ArrayList<>(Arrays.asList(event.getMessage().getContentRaw().split("\\s+")));
 
         switch (arguments.get(0)) {
-            case "dcr.start" -> new StartRace(event);
-            case "dcr.join" -> new JoinRace(event);
-            case "dcr.leave" -> new LeaveRace(event);
+            case "tcr.start" -> new StartRace(event, arguments);
+            case "tcr.join" -> new JoinRace(event);
+            case "tcr.leave" -> new LeaveRace(event);
         }
     }
 

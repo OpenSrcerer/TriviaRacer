@@ -1,6 +1,6 @@
 package dracer.util;
 
-import dracer.Dracer;
+import dracer.TRacer;
 import dracer.commands.Command;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -42,13 +42,13 @@ public final class CommandHandler {
                 } catch (Error err) {
                     // Fatal Error, terminate program
                     lgr.error("A fatal error was thrown. Shutting down. Details:", err);
-                    Dracer.immediateShutdown();
+                    TRacer.immediateShutdown();
                 }
             }
         };
 
-        for (int thread = 1; thread <= Dracer.AVAILABLE_CORES; ++thread) {
-            Dracer.COMMAND_EXECUTOR.submit(drainCommands);
+        for (int thread = 1; thread <= TRacer.AVAILABLE_CORES; ++thread) {
+            TRacer.COMMAND_EXECUTOR.submit(drainCommands);
         }
     }
 

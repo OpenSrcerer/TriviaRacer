@@ -13,11 +13,10 @@ import net.dv8tion.jda.api.utils.cache.CacheFlag;
 import net.dv8tion.jda.api.utils.data.DataArray;
 
 import javax.annotation.Nonnull;
-import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.concurrent.*;
 
-public abstract class Dracer {
+public abstract class TRacer {
     // ***************************************************************
     // **                        CONSTANTS                          **
     // ***************************************************************
@@ -29,12 +28,10 @@ public abstract class Dracer {
     // --- Racing Constants ---
     public static final int TASK_COUNT = 10;
     public static final int GRACE_PERIOD = 20;
-    public static final int RACE_LENGTH = 60;
+    public static final int RACE_LENGTH = TASK_COUNT * 5 + TASK_COUNT * 15;
     public static final int TOTAL_LENGTH = GRACE_PERIOD + RACE_LENGTH;
 
-    // --- Word Files ---
-    public static ArrayList<String> cleanWords;
-    public static ArrayList<String> offensiveWords;
+    // --- Files ---
     public static DataArray emojis;
     // ***************************************************************
 
@@ -47,7 +44,7 @@ public abstract class Dracer {
     /**
      * The JDA instance of the bot.
      */
-    public static JDA dracerInst;
+    public static JDA tRacerInst;
 
     // Initializing for the Thread Factory & Pool
     static {
@@ -65,7 +62,7 @@ public abstract class Dracer {
 
             @Override
             public Thread newThread(@Nonnull final Runnable r) {
-                return new Thread(r, "Handler-" + counter++);
+                return new Thread(r, "RaceScheduler-" + counter++);
             }
         };
 
@@ -82,9 +79,9 @@ public abstract class Dracer {
         // Get the configuration values
         final String[] config = Initialization.initializeTokens();
 
-        Initialization.initFiles("clean.txt", "offensive.txt", "emojis-oliveratgithub.json");
+        Initialization.initEmojiFile("emojis-oliveratgithub.json");
 
-        dracerInst = JDABuilder
+        tRacerInst = JDABuilder
                 .create(
                         config[1],
                         EnumSet.of(
@@ -106,8 +103,8 @@ public abstract class Dracer {
                 .addEventListeners(new EventDelegate())
                 .build();
 
-        Initialization.setConstants(config[0], dracerInst.getSelfUser().getId(), dracerInst.getSelfUser().getAvatarUrl());
-        dracerInst.getPresence().setPresence(OnlineStatus.DO_NOT_DISTURB, Activity.competing("loading..."));
+        Initialization.setConstants(config[0], tRacerInst.getSelfUser().getId(), tRacerInst.getSelfUser().getAvatarUrl());
+        tRacerInst.getPresence().setPresence(OnlineStatus.DO_NOT_DISTURB, Activity.competing("loading..."));
     }
 
     public static String getRandomEmojis() {
@@ -125,8 +122,8 @@ public abstract class Dracer {
     public static void immediateShutdown() {
         COMMAND_EXECUTOR.shutdown();
 
-        if (dracerInst != null) {
-            dracerInst.shutdownNow();
+        if (tRacerInst != null) {
+            tRacerInst.shutdownNow();
         }
 
         System.exit(-1);

@@ -1,7 +1,7 @@
 package dracer.commands.user;
 
 import dracer.commands.Command;
-import dracer.racing.DictionaryRace;
+import dracer.racing.TriviaRace;
 import dracer.racing.RaceHandler;
 import dracer.util.CommandHandler;
 import net.dv8tion.jda.api.events.message.guild.GuildMessageReceivedEvent;
@@ -21,7 +21,7 @@ public class LeaveRace implements Command {
     @Override
     public void run() {
         if (RaceHandler.isRaceActive(event.getChannel().getId())) {
-            DictionaryRace race = RaceHandler.removeRacer(event.getChannel().getId(), event.getMember().getId());
+            TriviaRace race = RaceHandler.removeRacer(event.getChannel().getId(), event.getMember().getId());
             if (race == null) {
                 event.getChannel().sendMessage("<@" + event.getMember().getId() + "> You are not part of this race!").queue();
             } else {

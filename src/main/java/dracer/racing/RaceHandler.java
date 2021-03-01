@@ -1,44 +1,48 @@
 package dracer.racing;
 
-import dracer.Dracer;
+import dracer.TRacer;
+import dracer.racing.api.TriviaAPI;
 import dracer.racing.entities.Racer;
-import dracer.racing.tasks.TaskList;
+import dracer.racing.tasks.Task;
 import dracer.styling.Embed;
-import dracer.util.RaceTime;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.TextChannel;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.annotation.Nullable;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Future;
 import java.util.concurrent.TimeUnit;
 
 import static dracer.styling.Embed.EmbedFactory;
 
 public final class RaceHandler {
+    private static final Logger lgr = LoggerFactory.getLogger(RaceHandler.class);
     // ChannelID, Race
-    public static final Map<String, DictionaryRace> activeRaces = new HashMap<>();
+    public static final Map<String, TriviaRace> activeRaces = new HashMap<>();
 
-    public static void evaluateAnswer(String channelId, String racerId, String answer) {
-        DictionaryRace race = activeRaces.get(channelId);
-        if (race.evalAnswer(racerId, answer)) {
-            finishSequence(race);
-        }
+    public static boolean evaluateAnswer(String channelId, String racerId, String answer) {
+        TriviaRace race = activeRaces.get(channelId);
+        return race.evalAnswer(racerId, answer);
     }
 
     public static boolean isChannelRaceMode(String channelId) {
-        DictionaryRace race = activeRaces.get(channelId);
+        TriviaRace race = activeRaces.get(channelId);
         if (race != null) {
-            return race.getState() == DictionaryRace.RaceState.IN_PROGRESS;
+            return race.getState() == TriviaRace.RaceState.IN_PROGRESS;
         }
         return false;
     }
 
-    public static void addRace(TextChannel channel, Member startingMember) {
+    public static void addRace(Task.TaskCategory category, TextChannel channel, Member startingMember) {
         if (!isRaceActive(channel.getId())) {
-            DictionaryRace newRace = new DictionaryRaceImpl(channel.getId(), startingMember);
+            TriviaRace newRace = new TriviaRaceImpl(category, channel.getId(), startingMember);
             activeRaces.put(channel.getId(), newRace);
             startSequence(channel, newRace);
+            lgr.info("Created new race for category " + newRace.getCategory().name + " with ID:" + newRace.getEmojID());
         }
     }
 
@@ -47,9 +51,9 @@ public final class RaceHandler {
     }
 
     @Nullable
-    public static DictionaryRace addRacerToRace(String channelId, Member tentativeRacer) {
+    public static TriviaRace addRacerToRace(String channelId, Member tentativeRacer) {
         // Externally null checked.
-        DictionaryRace runningRace = activeRaces.get(channelId);
+        TriviaRace runningRace = activeRaces.get(channelId);
         if (!runningRace.addRacer(tentativeRacer)) {
             return null; // Racer already in race
         }
@@ -57,24 +61,25 @@ public final class RaceHandler {
     }
 
     @Nullable
-    public static DictionaryRace removeRacer(String channelId, String racerId) {
+    public static TriviaRace removeRacer(String channelId, String racerId) {
         // Externally null checked.
-        DictionaryRace runningRace = activeRaces.get(channelId);
+        TriviaRace runningRace = activeRaces.get(channelId);
         if (!runningRace.removeRacer(racerId)) {
             return null; // Racer not in race.
         }
         return runningRace;
     }
 
-    private static String getAllRacerLanes(DictionaryRace race) {
+    private static String getAllRacerLanes(TriviaRace race) {
         StringBuilder builder = new StringBuilder();
         for (Racer r : race.getPlayers()) {
-            builder.append("🚩 | ").append(r.lane.getLane()).append(" | <@").append(r.member.getId()).append(">\n");
+            builder.append("|").append(r.lane.getLane()).append(" | <@")
+                    .append(r.member.getId()).append(">\n").append("(").append(r.getTasksCompleted()).append("/10)");
         }
         return builder.append("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━").toString();
     }
 
-    public static void startSequence(TextChannel channel, DictionaryRace race) {
+    public static void startSequence(TextChannel channel, TriviaRace race) {
         // Race Start Notification
         channel.sendMessage(getAllRacerLanes(race))
                 .embed(EmbedFactory(race, Embed.EmbedType.STARTING))
@@ -89,14 +94,15 @@ public final class RaceHandler {
                 }).queue();
     }
 
-    public static void refreshRaceMessage(DictionaryRace race) {
+    public static void refreshRaceMessage(TriviaRace race) {
         race.getMessage().editMessage(RaceHandler.getAllRacerLanes(race))
                 .embed(Embed.EmbedFactory(race, Embed.EmbedType.STARTING))
                 .queue();
     }
 
-    private static void doRacePrep(DictionaryRace race) {
+    private static void doRacePrep(TriviaRace race) {
         race.setTime(); // Set the temporals for this race
+        Future<List<Task>> taskFuture = TriviaAPI.requestTasks(race.getCategory());
 
         // Remove the race and exit
         if (race.isCancelled()) {
@@ -104,52 +110,68 @@ public final class RaceHandler {
             return;
         }
 
-        RaceTime time = race.getTime();
-        // Initialize Tasks
-        Dracer.RACE_EXECUTOR.execute(() -> race.setTasks(TaskList.getTasks(10)));
         // Further notification messages
-        Dracer.RACE_EXECUTOR.schedule(() -> race.getMessage().editMessage(EmbedFactory(race, Embed.EmbedType.STARTING)).queue(),
-                time.getSecondsPreGrace(10), TimeUnit.SECONDS);
-        Dracer.RACE_EXECUTOR.schedule(() -> race.getMessage().editMessage(EmbedFactory(race, Embed.EmbedType.STARTING)).queue(),
-                time.getSecondsPreGrace(3), TimeUnit.SECONDS);
-        Dracer.RACE_EXECUTOR.schedule(() -> race.getMessage().editMessage(EmbedFactory(race, Embed.EmbedType.STARTING)).queue(),
-                time.getSecondsPreGrace(2), TimeUnit.SECONDS);
-        Dracer.RACE_EXECUTOR.schedule(() -> race.getMessage().editMessage(EmbedFactory(race, Embed.EmbedType.STARTING)).queue(),
-                time.getSecondsPreGrace(1), TimeUnit.SECONDS);
+        TRacer.RACE_EXECUTOR.schedule(() -> race.getMessage().editMessage(EmbedFactory(race, Embed.EmbedType.STARTING)).queue(),
+                race.getTime().getSecondsPreGrace(10), TimeUnit.SECONDS);
+        TRacer.RACE_EXECUTOR.schedule(() -> race.getMessage().editMessage(EmbedFactory(race, Embed.EmbedType.STARTING)).queue(),
+                race.getTime().getSecondsPreGrace(3), TimeUnit.SECONDS);
+        TRacer.RACE_EXECUTOR.schedule(() -> race.getMessage().editMessage(EmbedFactory(race, Embed.EmbedType.STARTING)).queue(),
+                race.getTime().getSecondsPreGrace(2), TimeUnit.SECONDS);
+        TRacer.RACE_EXECUTOR.schedule(() -> race.getMessage().editMessage(EmbedFactory(race, Embed.EmbedType.STARTING)).queue(),
+                race.getTime().getSecondsPreGrace(1), TimeUnit.SECONDS);
 
-        // Start the race
-        Dracer.RACE_EXECUTOR.schedule(() -> {
-            try {
-                race.setState(DictionaryRace.RaceState.IN_PROGRESS);
-                race.getMessage().delete().queue();
-
-                race.getMessage().getTextChannel().sendMessage(getAllRacerLanes(race))
-                        .embed(EmbedFactory(race, Embed.EmbedType.ONGOING))
-                        .queue(race::setMessage);
-            } catch (Exception ex) {
-                ex.printStackTrace();
-            }
-        }, Dracer.GRACE_PERIOD, TimeUnit.SECONDS);
-
-        // Schedule Leaderboard Updates
-        for (int index = Dracer.RACE_LENGTH - 5; index > 0; index -= 5) {
-            Dracer.RACE_EXECUTOR.schedule(() -> race.getMessage().editMessage(getAllRacerLanes(race))
-                    .embed(EmbedFactory(race, Embed.EmbedType.ONGOING))
-                    .queue(), time.getSecondsPreEndOfRace(index), TimeUnit.SECONDS);
-        }
-
-        // Schedule Race End
-        race.setEndFuture(Dracer.RACE_EXECUTOR.schedule(() -> {
-            finishSequence(race);
-            return null;
-        }, Dracer.TOTAL_LENGTH, TimeUnit.SECONDS));
+        raceStart(race, taskFuture);
     }
 
-    public static void finishSequence(DictionaryRace race) {
-        race.getMessage().delete().queue();
-        race.getMessage().getTextChannel().sendMessage(EmbedFactory(race, Embed.EmbedType.FINISHSEQ)).queue();
-        race.setState(DictionaryRace.RaceState.FINISHED);
-        removeRace(race.getChannelId());
+    private static void raceStart(TriviaRace race, Future<List<Task>> taskFuture) {
+        // Start the race
+        TRacer.RACE_EXECUTOR.schedule(() -> {
+            try {
+                race.setTasks(taskFuture.get(1, TimeUnit.SECONDS));
+                race.setState(TriviaRace.RaceState.IN_PROGRESS);
+                race.getMessage().delete().queue();
+            } catch (Exception ex) {
+                lgr.error("Error:", ex);
+                race.getChannel().sendMessage("Race was unable to start due to an API problem. Please try again later.").queue();
+                removeRace(race.getChannelId());
+            }
+        }, TRacer.GRACE_PERIOD, TimeUnit.SECONDS);
+
+        scheduleTriviaQuestions(race);
+    }
+
+    private static void scheduleTriviaQuestions(TriviaRace race) {
+        // Schedule Trivia Questions
+        int secondsPrior = TRacer.RACE_LENGTH;
+        for (int task = 0; task < TRacer.TASK_COUNT; ++task) {
+            TRacer.RACE_EXECUTOR.schedule(() -> {
+                race.incrementCurrentTask();
+                race.getChannel().sendMessage(getAllRacerLanes(race))
+                        .embed(EmbedFactory(race, Embed.EmbedType.TRIVIA_QUESTION))
+                        .queue();
+                }, race.getTime().getSecondsPreEndOfRace(secondsPrior), TimeUnit.SECONDS);
+
+            TRacer.RACE_EXECUTOR.schedule(() -> {
+                race.getChannel().sendMessage(getAllRacerLanes(race))
+                        .embed(EmbedFactory(race, Embed.EmbedType.TRIVIA_QUESTION_AFTER))
+                        .queue();
+                }, race.getTime().getSecondsPreEndOfRace(secondsPrior - 15), TimeUnit.SECONDS);
+
+            secondsPrior -= 20;
+        }
+
+        finishSequence(race);
+    }
+
+    private static void finishSequence(TriviaRace race) {
+        // Schedule Race End
+        race.setEndFuture(TRacer.RACE_EXECUTOR.schedule(() -> {
+            race.getMessage().getTextChannel().sendMessage(EmbedFactory(race, Embed.EmbedType.FINISHSEQ)).queue();
+            race.setState(TriviaRace.RaceState.FINISHED);
+            removeRace(race.getChannelId());
+            lgr.info("Finished race with ID:" + race.getEmojID());
+            return null;
+        }, TRacer.TOTAL_LENGTH, TimeUnit.SECONDS));
     }
 
     public static void removeRace(String channelId) {

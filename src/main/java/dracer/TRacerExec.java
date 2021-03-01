@@ -2,13 +2,13 @@ package dracer;
 
 import dracer.util.Initialization;
 
-public class DracerExec {
-    public static void main(String[] args) {
+public class TRacerExec {
+    public static void main(String[] args) throws InterruptedException {
         try {
-            Dracer.initialize();
+            TRacer.initialize();
         } catch (Exception | Error e) {
             Initialization.lgr.error("Unable to start the bot. Details:", e);
-            Dracer.immediateShutdown();
+            TRacer.immediateShutdown();
         }
     }
 }

@@ -24,4 +24,3 @@ hs_err_pid*
 
 # Config file where tokens are stored & other top secret stuff
 /src/main/resources/config.json
-/src/main/resources/tasks.json
