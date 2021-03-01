@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>opensrcerer.com.github</groupId>
-    <artifactId>DictionaryRacer</artifactId>
+    <artifactId>TriviaRacer</artifactId>
     <version>0.0.1</version>
     <build>
         <plugins>
@@ -22,7 +22,7 @@
                 </executions>
                 <configuration>
                     <executable>maven</executable>
-                    <mainClass>dracer.TRacerExec</mainClass>
+                    <mainClass>tracer.TRacerExec</mainClass>
                 </configuration>
             </plugin>
 
@@ -53,7 +53,7 @@
                             <transformers>
                                 <transformer implementation=
                                                      "org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
-                                    <mainClass>dracer.TRacerExec</mainClass>
+                                    <mainClass>tracer.TRacerExec</mainClass>
                                 </transformer>
                             </transformers>
                         </configuration>
