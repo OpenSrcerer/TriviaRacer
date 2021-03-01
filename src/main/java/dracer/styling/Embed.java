@@ -62,9 +62,9 @@ public class Embed extends EmbedBuilder {
         }
 
         if (race.getCategory() == Task.TaskCategory.ALL_CATEGORIES) {
-            setTitle("🎺 A wild trivia race appears! Type `tcr.join` to join!");
+            setTitle("A wild trivia race appears! 🎺 Type `tcr.join` to join!");
         } else {
-            setTitle("🎺 A wild trivia race appears! Type `tcr.join` to join!");
+            setTitle("A wild trivia race appears! 🎺 Type `tcr.join` to join!");
             setDescription("Specific Category: __" + race.getCategory().name + "__");
         }
 
@@ -102,7 +102,7 @@ public class Embed extends EmbedBuilder {
             setFooter("Get ready to answer!");
             setImage("https://raw.githubusercontent.com/OpenSrcerer/TriviaRacer/main/src/main/java/dracer/img/triviaquestiontimer.gif?token=ALCYYNTMPE3DKYC5XNSISHLAIX5ZA");
         } else {
-            setImage("https://raw.githubusercontent.com/OpenSrcerer/TriviaRacer/main/src/main/java/dracer/img/answertimer.gif?token=ALCYYNXLHJ7KTIYAXLTOVFLAIZEGK");
+            setImage("https://raw.githubusercontent.com/OpenSrcerer/TriviaRacer/main/src/main/java/dracer/img/fasttimer.gif?token=ALCYYNRQNBEGKXHDQ6JNS4DAIZFKY");
         }
     }
 
@@ -110,7 +110,7 @@ public class Embed extends EmbedBuilder {
         Task currentTask = race.getTasks().get(race.getCurrentTask());
         Set<String> taskCompleters = currentTask.haveCompleted();
 
-        setTitle("Answers for Question " + (race.getCurrentTask() + 1) + ": " + currentTask.getQuestion());
+        setTitle("Answers for Question " + (race.getCurrentTask() + 1) + ": __" + currentTask.getQuestion() + "__");
         setDescription("► Correct Answer: __**" + currentTask.getCorrectAnswer() + "**__");
 
         if (taskCompleters.isEmpty()) {
@@ -128,6 +128,8 @@ public class Embed extends EmbedBuilder {
             }
             addField("Awesome! ⭐ You guys got the correct answer:", players.toString(), false);
         }
+
+        setImage("https://raw.githubusercontent.com/OpenSrcerer/TriviaRacer/main/src/main/java/dracer/img/fasttimer.gif?token=ALCYYNRQNBEGKXHDQ6JNS4DAIZFKY");
     }
 
     private void finished() {
@@ -195,9 +197,9 @@ public class Embed extends EmbedBuilder {
 
         addField("View my available trivia categories:",
                 """
-                __tcr.other__ - General Categories
-                __tcr.science__ - Science Related Categories
-                __tcr.entertainment__ - Entertainment Categories
+                **tcr.other** - General Categories
+                **tcr.science** - Science Related Categories
+                **tcr.entertainment** - Entertainment Categories
                 """,false);
 
         addField("Developed & Maintained with 💖 by", "<@178603029115830282>", false);

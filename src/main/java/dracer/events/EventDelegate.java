@@ -27,7 +27,7 @@ import java.util.Arrays;
 public class EventDelegate extends ListenerAdapter {
     @Override
     public void onReady(@Nonnull ReadyEvent event) {
-        TRacer.tRacerInst.getPresence().setPresence(OnlineStatus.ONLINE, Activity.playing("turbotastic!"));
+        TRacer.tRacerInst.getPresence().setPresence(OnlineStatus.ONLINE, Activity.playing("tcr.help -> turbotastic!"));
     }
 
     @Override

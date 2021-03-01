@@ -1,45 +1,36 @@
 package dracer.racing.entities;
 
-import dracer.racing.TriviaRaceImpl;
-
 public class RacingLane {
-    private static final StringBuilder raceTrack = new StringBuilder(
-            "                                                                                 " +
-            "                                                                                                         " +
-            "          ");
+    private static final StringBuilder raceTrack = new StringBuilder("          ");
+    private static final String tenSpaces = "          ";
 
     private final String vehicle;
     private float position;
 
     public RacingLane(String vehicle) {
         this.vehicle = vehicle;
-        this.position = 0;
+        this.position = 9;
     }
 
     public void incrementPosition() {
-        position = position + (1f / TriviaRaceImpl.RACE_TASKS) * raceTrack.length();
+        ++position;
     }
 
     public String getLane() {
-        if (position >= raceTrack.length() - 1) {
-            return raceTrack.substring(0, raceTrack.length()).concat(vehicle);
+        if (position >= 10) {
+            return "<:green_flag:815987669603450942> ".concat("🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥🔥").concat(" " + vehicle);
         }
-
-        return vehicleAtPosition((int) position).concat(":checkered_flag:");
+        return "<:green_flag:815987669603450942> ".concat(buildLaneAtPosition((int) position)).concat(":checkered_flag:");
     }
 
-    public String vehicleAtPosition(int position) {
-        StringBuilder newString = new StringBuilder();
-
+    public String buildLaneAtPosition(int position) {
+        StringBuilder lane = new StringBuilder();
         for (int i = 0; i < raceTrack.length(); ++i) {
-            newString.append(raceTrack.charAt(i));
-
             if (i == position) {
-                newString.append(vehicle);
-                newString.append(raceTrack.substring(i, raceTrack.length()));
-                return newString.toString();
+                lane.append(vehicle);
             }
+            lane.append(tenSpaces);
         }
-        return newString.toString();
+        return lane.toString();
     }
 }

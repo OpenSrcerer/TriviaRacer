@@ -18,6 +18,7 @@ public class HtmlEntities
         map.put("&amp;", (char) 38);
         map.put("&apos;", (char) 39);
         map.put("&rsquo;", (char) 39);
+        map.put("&lsquo;", (char) 39);
         map.put("&lt;", (char) 60);
         map.put("&gt;", (char) 62);
         map.put("&nbsp;", (char) 160);

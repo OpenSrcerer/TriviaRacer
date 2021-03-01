@@ -70,9 +70,10 @@ public final class RaceHandler {
     private static String getAllRacerLanes(TriviaRace race) {
         StringBuilder builder = new StringBuilder();
         for (Racer r : race.getPlayers()) {
-            builder.append(r.lane.getLane()).append(" [<@").append(r.member.getId()).append(">]\n");
+            builder.append(r.lane.getLane()).append(" <@").append(r.member.getId())
+                    .append("> **(").append(r.getTasksCompleted()).append("/10)**\n");
         }
-        return builder.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━").toString();
+        return builder.append("━━━━━━━━━━━━━━━━━━━━━━━━━━━").toString();
     }
 
     public static void startSequence(TextChannel channel, TriviaRace race) {
@@ -89,7 +90,7 @@ public final class RaceHandler {
                 }).queue();
     }
 
-    public static void refreshRaceMessage(TriviaRace race) {
+    public static void refreshStartingMessage(TriviaRace race) {
         race.getMessage().editMessage(Embed.EmbedFactory(race, Embed.EmbedType.STARTING)).queue();
     }
 
@@ -160,7 +161,9 @@ public final class RaceHandler {
 
             futures.add(TRacer.RACE_EXECUTOR.schedule(() ->
                     race.getMessage().editMessage(getAllRacerLanes(race))
-                            .embed(EmbedFactory(race, Embed.EmbedType.TRIVIA_QUESTION_AFTER)).queue(),
+                            .embed(EmbedFactory(race, Embed.EmbedType.TRIVIA_QUESTION_AFTER))
+                            .flatMap(Message::clearReactions)
+                            .queue(),
                     race.getTime().getSecondsPostGrace(secondsAfter + TRacer.READING_TIME + TRacer.ANSWER_TIME), TimeUnit.SECONDS));
 
             secondsAfter += TRacer.TRIVIA_QUESTION_TOTAL;

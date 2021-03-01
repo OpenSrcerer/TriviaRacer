@@ -27,7 +27,7 @@ public class JoinRace implements Command {
             } else {
                 if (race.getState().equals(TriviaRace.RaceState.STARTING)) {
                     RaceHandler.addRacer(event.getChannel().getId(), event.getMember());
-                    RaceHandler.refreshRaceMessage(race);
+                    RaceHandler.refreshStartingMessage(race);
                 } else {
                     event.getChannel().sendMessage("<@" + event.getMember().getId() + "> You cannot join a race that is in progress!").queue();
                 }

@@ -31,7 +31,7 @@ public class LeaveRace implements Command {
                                 "why do you wanna leave?! Cancel the race instead with `tcr.cancel`.").queue();
                     } else {
                         RaceHandler.removeRacer(event.getChannel().getId(), event.getMember().getId());
-                        RaceHandler.refreshRaceMessage(race);
+                        RaceHandler.refreshStartingMessage(race);
                     }
                 }
             }
