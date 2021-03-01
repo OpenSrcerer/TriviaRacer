@@ -45,7 +45,7 @@ public class StartRace implements Command {
             }
         }
 
-        if (!RaceHandler.isRaceActive(event.getChannel().getId())) {
+        if (!RaceHandler.findRace(event.getChannel().getId())) {
             RaceHandler.addRace(category, event.getChannel(), event.getMember());
         } else {
             // noinspection ConstantConditions

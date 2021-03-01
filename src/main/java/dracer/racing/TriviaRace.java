@@ -22,23 +22,23 @@ public interface TriviaRace {
 
     void setState(RaceState state);
 
-    void setEndFuture(ScheduledFuture<Void> future);
-
     void setMessage(Message message);
 
     void setTasks(List<Task> tasks);
 
     void setTime();
 
-    void cancelFuture();
-
     void incrementCurrentTask();
 
-    boolean evalAnswer(String racerId, String answer);
+    void addActions(List<ScheduledFuture<?>> future);
 
-    boolean addRacer(Member member);
+    void cancel();
 
-    boolean removeRacer(String racerId);
+    void removeRacer(String racerId);
+
+    void addRacer(Member member);
+
+    boolean evalAnswer(String racerId, String emoji);
 
     boolean isCancelled();
 
@@ -57,6 +57,8 @@ public interface TriviaRace {
     @Nonnull TextChannel getChannel();
 
     @Nonnull String getLeaderboard();
+
+    @Nonnull String getOwnerId();
 
     @Nonnull String getChannelId();
 

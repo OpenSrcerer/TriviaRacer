@@ -30,17 +30,10 @@ public class BooleanTask implements Task {
     }
 
     @Override
-    public boolean isCorrect(String tentativeAnswer) {
-        tentativeAnswer = tentativeAnswer.toLowerCase(Locale.ROOT).trim();
+    public boolean isCorrect(String answerEmoji) {
+        answerEmoji = emojiMapper(answerEmoji);
         String correctAnswer = answer.toLowerCase(Locale.ROOT).trim();
-
-        if (tentativeAnswer.equals("a") && correctAnswer.equals("true")) {
-            return true;
-        } else if (tentativeAnswer.equals("b") && correctAnswer.equals("false")) {
-            return true;
-        }
-
-        return tentativeAnswer.equals(correctAnswer);
+        return answerEmoji.equals(correctAnswer);
     }
 
     @Override

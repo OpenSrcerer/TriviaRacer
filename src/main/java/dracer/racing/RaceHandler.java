@@ -3,18 +3,19 @@ package dracer.racing;
 import dracer.TRacer;
 import dracer.racing.api.TriviaAPI;
 import dracer.racing.entities.Racer;
+import dracer.racing.tasks.MultipleChoiceTask;
 import dracer.racing.tasks.Task;
 import dracer.styling.Embed;
 import net.dv8tion.jda.api.entities.Member;
+import net.dv8tion.jda.api.entities.Message;
 import net.dv8tion.jda.api.entities.TextChannel;
+import net.dv8tion.jda.api.requests.RestAction;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.annotation.Nullable;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.Future;
+import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
 import static dracer.styling.Embed.EmbedFactory;
@@ -24,9 +25,9 @@ public final class RaceHandler {
     // ChannelID, Race
     public static final Map<String, TriviaRace> activeRaces = new HashMap<>();
 
-    public static boolean evaluateAnswer(String channelId, String racerId, String answer) {
+    public static boolean evaluateAnswer(String channelId, String racerId, String emoji) {
         TriviaRace race = activeRaces.get(channelId);
-        return race.evalAnswer(racerId, answer);
+        return race.evalAnswer(racerId, emoji);
     }
 
     public static boolean isChannelRaceMode(String channelId) {
@@ -38,7 +39,7 @@ public final class RaceHandler {
     }
 
     public static void addRace(Task.TaskCategory category, TextChannel channel, Member startingMember) {
-        if (!isRaceActive(channel.getId())) {
+        if (!findRace(channel.getId())) {
             TriviaRace newRace = new TriviaRaceImpl(category, channel.getId(), startingMember);
             activeRaces.put(channel.getId(), newRace);
             startSequence(channel, newRace);
@@ -46,35 +47,30 @@ public final class RaceHandler {
         }
     }
 
-    public static boolean isRaceActive(String channelId) {
+    public static boolean findRace(String channelId) {
         return activeRaces.containsKey(channelId);
     }
 
-    @Nullable
-    public static TriviaRace addRacerToRace(String channelId, Member tentativeRacer) {
-        // Externally null checked.
-        TriviaRace runningRace = activeRaces.get(channelId);
-        if (!runningRace.addRacer(tentativeRacer)) {
-            return null; // Racer already in race
-        }
-        return runningRace;
+    public static TriviaRace getRace(String channelId) {
+        return activeRaces.get(channelId);
     }
 
-    @Nullable
-    public static TriviaRace removeRacer(String channelId, String racerId) {
+    public static void addRacer(String channelId, Member tentativeRacer) {
         // Externally null checked.
         TriviaRace runningRace = activeRaces.get(channelId);
-        if (!runningRace.removeRacer(racerId)) {
-            return null; // Racer not in race.
-        }
-        return runningRace;
+        runningRace.addRacer(tentativeRacer);
+    }
+
+    public static void removeRacer(String channelId, String racerId) {
+        // Externally null checked.
+        TriviaRace runningRace = activeRaces.get(channelId);
+        runningRace.removeRacer(racerId);
     }
 
     private static String getAllRacerLanes(TriviaRace race) {
         StringBuilder builder = new StringBuilder();
         for (Racer r : race.getPlayers()) {
-            builder.append("|").append(r.lane.getLane()).append(" | <@")
-                    .append(r.member.getId()).append(">\n").append("(").append(r.getTasksCompleted()).append("/10)");
+            builder.append("|").append(r.lane.getLane()).append(" | <@").append(r.member.getId()).append(">\n");
         }
         return builder.append("\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━").toString();
     }
@@ -88,20 +84,19 @@ public final class RaceHandler {
                     return message;
                 })
                 .onErrorFlatMap(throwable -> {
-                    race.cancelFuture(); // Cancel the race
+                    race.cancel(); // Cancel the race
                     return channel.sendMessage("Race cancelled due to an error: " + throwable.getMessage());
                 }).queue();
     }
 
     public static void refreshRaceMessage(TriviaRace race) {
-        race.getMessage().editMessage(RaceHandler.getAllRacerLanes(race))
-                .embed(Embed.EmbedFactory(race, Embed.EmbedType.STARTING))
-                .queue();
+        race.getMessage().editMessage(Embed.EmbedFactory(race, Embed.EmbedType.STARTING)).queue();
     }
 
     private static void doRacePrep(TriviaRace race) {
         race.setTime(); // Set the temporals for this race
         Future<List<Task>> taskFuture = TriviaAPI.requestTasks(race.getCategory());
+        List<ScheduledFuture<?>> futures = new ArrayList<>();
 
         // Remove the race and exit
         if (race.isCancelled()) {
@@ -110,23 +105,28 @@ public final class RaceHandler {
         }
 
         // Further notification messages
-        TRacer.RACE_EXECUTOR.schedule(() -> race.getMessage().editMessage(EmbedFactory(race, Embed.EmbedType.STARTING)).queue(),
-                race.getTime().getSecondsPreGrace(10), TimeUnit.SECONDS);
-        TRacer.RACE_EXECUTOR.schedule(() -> race.getMessage().editMessage(EmbedFactory(race, Embed.EmbedType.STARTING)).queue(),
-                race.getTime().getSecondsPreGrace(3), TimeUnit.SECONDS);
-        TRacer.RACE_EXECUTOR.schedule(() -> race.getMessage().editMessage(EmbedFactory(race, Embed.EmbedType.STARTING)).queue(),
-                race.getTime().getSecondsPreGrace(2), TimeUnit.SECONDS);
-        TRacer.RACE_EXECUTOR.schedule(() -> race.getMessage().editMessage(EmbedFactory(race, Embed.EmbedType.STARTING)).queue(),
-                race.getTime().getSecondsPreGrace(1), TimeUnit.SECONDS);
-
-        raceStart(race, taskFuture);
-        scheduleTriviaQuestions(race);
-        finishSequence(race);
+        futures.addAll(raceStartNotification(race));
+        futures.addAll(Arrays.asList(raceStart(race, taskFuture), finishSequence(race)));
+        futures.addAll(scheduleTriviaQuestions(race));
+        race.addActions(futures);
     }
 
-    private static void raceStart(TriviaRace race, Future<List<Task>> taskFuture) {
+    private static List<ScheduledFuture<?>> raceStartNotification(TriviaRace race) {
+        return Arrays.asList(
+                TRacer.RACE_EXECUTOR.schedule(() -> race.getMessage().editMessage(EmbedFactory(race, Embed.EmbedType.STARTING)).queue(),
+                        race.getTime().getSecondsPreGrace(10), TimeUnit.SECONDS),
+                TRacer.RACE_EXECUTOR.schedule(() -> race.getMessage().editMessage(EmbedFactory(race, Embed.EmbedType.STARTING)).queue(),
+                        race.getTime().getSecondsPreGrace(3), TimeUnit.SECONDS),
+                TRacer.RACE_EXECUTOR.schedule(() -> race.getMessage().editMessage(EmbedFactory(race, Embed.EmbedType.STARTING)).queue(),
+                        race.getTime().getSecondsPreGrace(2), TimeUnit.SECONDS),
+                TRacer.RACE_EXECUTOR.schedule(() -> race.getMessage().editMessage(EmbedFactory(race, Embed.EmbedType.STARTING)).queue(),
+                        race.getTime().getSecondsPreGrace(1), TimeUnit.SECONDS)
+        );
+    }
+
+    private static ScheduledFuture<?> raceStart(TriviaRace race, Future<List<Task>> taskFuture) {
         // Start the race
-        TRacer.RACE_EXECUTOR.schedule(() -> {
+        return TRacer.RACE_EXECUTOR.schedule(() -> {
             try {
                 race.setTasks(taskFuture.get(1, TimeUnit.SECONDS));
                 race.setState(TriviaRace.RaceState.IN_PROGRESS);
@@ -138,39 +138,58 @@ public final class RaceHandler {
         }, TRacer.GRACE_PERIOD, TimeUnit.SECONDS);
     }
 
-    private static void scheduleTriviaQuestions(TriviaRace race) {
+    private static List<ScheduledFuture<?>> scheduleTriviaQuestions(TriviaRace race) {
+        List<ScheduledFuture<?>> futures = new ArrayList<>();
+
         // Schedule Trivia Questions
         int secondsPrior = TRacer.RACE_LENGTH;
 
         for (int task = 0; task < TRacer.TASK_COUNT; ++task) {
-            TRacer.RACE_EXECUTOR.schedule(() -> {
+            futures.add(TRacer.RACE_EXECUTOR.schedule(() -> {
                 race.getMessage().delete().queue();
                 race.incrementCurrentTask();
                 race.getChannel().sendMessage(getAllRacerLanes(race))
                         .embed(EmbedFactory(race, Embed.EmbedType.TRIVIA_QUESTION))
-                        .queue(race::setMessage);
-                }, race.getTime().getSecondsPreEndOfRace(secondsPrior), TimeUnit.SECONDS);
+                        .map(message -> {
+                            addReactions(race.getTasks().get(race.getCurrentTask()), message).queue();
+                            race.setMessage(message);
+                            return null;
+                        }).queue();
+            }, race.getTime().getSecondsPreEndOfRace(secondsPrior), TimeUnit.SECONDS));
 
-            TRacer.RACE_EXECUTOR.schedule(() -> {
+            futures.add(TRacer.RACE_EXECUTOR.schedule(() -> {
                 race.getMessage().delete().queue();
                 race.getChannel().sendMessage(getAllRacerLanes(race))
                         .embed(EmbedFactory(race, Embed.EmbedType.TRIVIA_QUESTION_AFTER))
                         .queue(race::setMessage);
-                }, race.getTime().getSecondsPreEndOfRace(secondsPrior - 15), TimeUnit.SECONDS);
-
+            }, race.getTime().getSecondsPreEndOfRace(secondsPrior - 15), TimeUnit.SECONDS));
             secondsPrior -= 20;
+        }
+
+        return futures;
+    }
+
+    private static RestAction<Void> addReactions(Task task, Message message) {
+        if (task instanceof MultipleChoiceTask) {
+            return message.addReaction("\uD83C\uDDE6")
+                    .and(message.addReaction("\uD83C\uDDE7"))
+                    .and(message.addReaction("\uD83C\uDDE8"))
+                    .and(message.addReaction("\uD83C\uDDE9"));
+        } else {
+            return message.addReaction("☑️")
+                    .and(message.addReaction("\uD83C\uDDFD"));
         }
     }
 
-    private static void finishSequence(TriviaRace race) {
+    private static ScheduledFuture<?> finishSequence(TriviaRace race) {
         // Schedule Race End
-        race.setEndFuture(TRacer.RACE_EXECUTOR.schedule(() -> {
-            race.getMessage().editMessage(EmbedFactory(race, Embed.EmbedType.FINISHSEQ)).queue();
+        return TRacer.RACE_EXECUTOR.schedule(() -> {
+            race.getMessage().editMessage(EmbedFactory(race, Embed.EmbedType.FINISHED)).queue();
             race.setState(TriviaRace.RaceState.FINISHED);
             removeRace(race.getChannelId());
             lgr.info("Finished race with ID:" + race.getEmojID());
             return null;
-        }, TRacer.TOTAL_LENGTH, TimeUnit.SECONDS));
+        }, TRacer.TOTAL_LENGTH, TimeUnit.SECONDS);
     }
 
     public static void removeRace(String channelId) {

@@ -20,12 +20,20 @@ public class LeaveRace implements Command {
     @SuppressWarnings("ConstantConditions")
     @Override
     public void run() {
-        if (RaceHandler.isRaceActive(event.getChannel().getId())) {
-            TriviaRace race = RaceHandler.removeRacer(event.getChannel().getId(), event.getMember().getId());
+        if (RaceHandler.findRace(event.getChannel().getId())) {
+            TriviaRace race = RaceHandler.getRace(event.getChannel().getId());
             if (race == null) {
                 event.getChannel().sendMessage("<@" + event.getMember().getId() + "> You are not part of this race!").queue();
             } else {
-                RaceHandler.refreshRaceMessage(race);
+                if (race.getState().equals(TriviaRace.RaceState.STARTING)) {
+                    if (race.getOwnerId().equals(event.getMember().getId())) {
+                        event.getChannel().sendMessage("<@" + event.getMember().getId() + "> You're the owner dumdum, " +
+                                "why do you wanna leave?! Cancel the race instead with `tcr.cancel`.").queue();
+                    } else {
+                        RaceHandler.removeRacer(event.getChannel().getId(), event.getMember().getId());
+                        RaceHandler.refreshRaceMessage(race);
+                    }
+                }
             }
         } else {
             event.getChannel().sendMessage("<@" + event.getMember().getId() + "> A race has not been started yet!").queue();

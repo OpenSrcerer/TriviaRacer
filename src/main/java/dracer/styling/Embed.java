@@ -1,5 +1,6 @@
 package dracer.styling;
 
+import dracer.TRacer;
 import dracer.racing.TriviaRace;
 import dracer.racing.tasks.MultipleChoiceTask;
 import dracer.racing.tasks.Task;
@@ -13,7 +14,8 @@ import java.util.Set;
 
 public class Embed extends EmbedBuilder {
     public enum EmbedType {
-        STARTING, TRIVIA_QUESTION, TRIVIA_QUESTION_AFTER, FINISHSEQ,
+        STARTING, CANCELLED, FINISHED,
+        TRIVIA_QUESTION, TRIVIA_QUESTION_AFTER,
         SCIENCE, ENTERTAINMENT, OTHER, HELP
     }
 
@@ -37,9 +39,10 @@ public class Embed extends EmbedBuilder {
 
         switch (type) {
             case STARTING -> starting();
+            case CANCELLED -> cancelled(race.getPlayers().get(0).member.getId());
             case TRIVIA_QUESTION -> triviaQuestion(race);
             case TRIVIA_QUESTION_AFTER -> triviaQuestionAfter(race);
-            case FINISHSEQ -> finished();
+            case FINISHED -> finished();
             case OTHER -> otherCategories();
             case SCIENCE -> scienceCategories();
             case ENTERTAINMENT -> entertainmentCategories();
@@ -56,9 +59,9 @@ public class Embed extends EmbedBuilder {
         }
 
         if (race.getCategory() == Task.TaskCategory.ALL_CATEGORIES) {
-            setTitle("A wild trivia race appears! Type `tcr.join` to join!");
+            setTitle("<:tB:643422476705202205> A wild trivia race appears! Type `tcr.join` to join!");
         } else {
-            setTitle("A wild trivia race appears! Type `tcr.join` to join!");
+            setTitle("<:tB:643422476705202205> A wild trivia race appears! Type `tcr.join` to join!");
             setDescription("Specific Category: __" + race.getCategory().name + "__");
         }
 
@@ -68,6 +71,11 @@ public class Embed extends EmbedBuilder {
         addField("Time to start:", secondsToStart + " seconds", false);
         setFooter("EmojID: " + race.getEmojID()); // Show Race's ID
         setTimestamp(Instant.now());
+    }
+
+    private void cancelled(String userId) {
+        setTitle("❌ Race was cancelled.");
+        setDescription("The race started by <@" + userId + "> was cancelled. \nAnd I was already typing the answers out...");
     }
 
     private void triviaQuestion(TriviaRace race) {
@@ -86,6 +94,8 @@ public class Embed extends EmbedBuilder {
         } else {
             addField("Answer with:", "a) **True**\nb) **False**", false);
         }
+
+        setImage("https://raw.githubusercontent.com/OpenSrcerer/TriviaRacer/main/src/main/java/dracer/img/triviaquestiontimer.gif?token=ALCYYNTMPE3DKYC5XNSISHLAIX5ZA");
     }
 
     private void triviaQuestionAfter(TriviaRace race) {
@@ -102,7 +112,7 @@ public class Embed extends EmbedBuilder {
                     "<@" + taskCompleters.iterator().next() + "> Considering you're playing solo, this isn't much of a surprise.", false);
         } else if (taskCompleters.size() == 1 && race.getPlayers().size() > 1) {
             addField("It seems that one user beat you all.",
-                    "Or perhaps + <@" + taskCompleters.iterator().next() + "> + just got lucky.", false);
+                    "Or perhaps <@" + taskCompleters.iterator().next() + "> just got lucky.", false);
         } else {
             StringBuilder players = new StringBuilder();
             for (String player : taskCompleters) {
@@ -121,7 +131,6 @@ public class Embed extends EmbedBuilder {
 
     private void otherCategories() {
         setTitle("Other Categories:");
-
         setDescription(
                 "ID: **" + Task.TaskCategory.ALL_CATEGORIES.ordinal() + "** → " + Task.TaskCategory.ALL_CATEGORIES.name + "\n" +
                 "ID: **" + Task.TaskCategory.GENERAL_KNOWLEDGE.ordinal() + "** → " + Task.TaskCategory.GENERAL_KNOWLEDGE.name + "\n" +
@@ -135,22 +144,22 @@ public class Embed extends EmbedBuilder {
                 "ID: **" + Task.TaskCategory.ANIMALS.ordinal() + "** → " + Task.TaskCategory.ANIMALS.name + "\n" +
                 "ID: **" + Task.TaskCategory.VEHICLES.ordinal() + "** → " + Task.TaskCategory.VEHICLES.name + "\n"
         );
+        setFooter("Use the ID to start a race! Example: tcr.start 3");
     }
 
     private void scienceCategories() {
         setTitle("Science Categories:");
-
         setDescription(
                 "ID: **" + Task.TaskCategory.SCIENCE_AND_NATURE.ordinal() + "** → " + Task.TaskCategory.SCIENCE_AND_NATURE.name + "\n" +
                 "ID: **" + Task.TaskCategory.SCIENCE_COMPUTERS.ordinal() + "** → " + Task.TaskCategory.SCIENCE_COMPUTERS.name + "\n" +
                 "ID: **" + Task.TaskCategory.SCIENCE_MATH.ordinal() + "** → " + Task.TaskCategory.SCIENCE_MATH.name + "\n" +
                 "ID: **" + Task.TaskCategory.SCIENCE_GADGETS.ordinal() + "** → " + Task.TaskCategory.SCIENCE_GADGETS.name + "\n"
         );
+        setFooter("Use the ID to start a race! Example: tcr.start 3");
     }
 
     private void entertainmentCategories() {
         setTitle("Entertainment Categories:");
-
         setDescription(
                 "ID: **" + Task.TaskCategory.ENTERTAINMENT_BOOKS.ordinal() + "** → " + Task.TaskCategory.ENTERTAINMENT_BOOKS.name + "\n" +
                 "ID: **" + Task.TaskCategory.ENTERTAINMENT_FILM.ordinal() + "** → " + Task.TaskCategory.ENTERTAINMENT_FILM.name + "\n" +
@@ -163,9 +172,27 @@ public class Embed extends EmbedBuilder {
                 "ID: **" + Task.TaskCategory.ENTERTAINMENT_ANIME_MANGA.ordinal() + "** → " + Task.TaskCategory.ENTERTAINMENT_ANIME_MANGA.name + "\n" +
                 "ID: **" + Task.TaskCategory.ENTERTAINMENT_CARTOONS_ANIMATIONS.ordinal() + "** → " + Task.TaskCategory.ENTERTAINMENT_CARTOONS_ANIMATIONS.name + "\n"
         );
+        setFooter("Use the ID to start a race! Example: tcr.start 3");
     }
 
     private void help() {
+        setTitle("<:tB:643422476705202205> Help Menu - TriviaRacer", "https://github.com/opensrcerer/triviaracer");
+        setDescription("Hello there! Thank you for having me in your server.\n" +
+                "TriviaRacer is a bot used to have fun trivia matches with your friends. " +
+                "Here are all my commands:");
+        addField("tcr.start `[categoryid]`", "Start a trivia race. " +
+                "Leave `categoryid` empty if you want questions from all categories.", true);
+        addField("tcr.join", "Join a trivia race.", true);
+        addField("tcr.leave", "Leave a trivia race.", true);
 
+        addField("View my available trivia categories:",
+                """
+                __tcr.other__ - General Categories
+                __tcr.science__ - Science Related Categories
+                __tcr.entertainment__ - Entertainment Categories
+                """,false);
+
+        addField("Developed & Maintained with 💖 by", "<@178603029115830282>", false);
+        setFooter("🚀 Gateway Ping: " + TRacer.tRacerInst.getGatewayPing());
     }
 }

@@ -57,23 +57,16 @@ public class MultipleChoiceTask implements Task {
     }
 
     @Override
-    public boolean isCorrect(String tentativeAnswer) {
-        tentativeAnswer = tentativeAnswer.toLowerCase(Locale.ROOT).trim();
+    public boolean isCorrect(String answerEmoji) {
+        answerEmoji = emojiMapper(answerEmoji);
         String cAnswer = correctAnswer.toLowerCase(Locale.ROOT).trim();
 
-        if (tentativeAnswer.length() == 1) {
-            tentativeAnswer = tentativeAnswer.concat(")");
-        }
-
-        String answerFromMap = answerMap.get(tentativeAnswer);
+        String answerFromMap = answerMap.get(answerEmoji);
         if (answerFromMap != null) {
             answerFromMap = answerFromMap.toLowerCase(Locale.ROOT).trim();
-            if (answerFromMap.equals(cAnswer)) {
-                return true;
-            }
+            return answerFromMap.equals(cAnswer);
         }
-
-        return tentativeAnswer.equals(cAnswer);
+        return false;
     }
 
     @Override

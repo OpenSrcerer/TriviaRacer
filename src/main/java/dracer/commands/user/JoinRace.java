@@ -20,12 +20,17 @@ public class JoinRace implements Command {
     @SuppressWarnings("ConstantConditions")
     @Override
     public void run() {
-        if (RaceHandler.isRaceActive(event.getChannel().getId())) {
-            TriviaRace race = RaceHandler.addRacerToRace(event.getChannel().getId(), event.getMember());
+        if (RaceHandler.findRace(event.getChannel().getId())) {
+            TriviaRace race = RaceHandler.getRace(event.getChannel().getId());
             if (race == null) {
                 event.getChannel().sendMessage("<@" + event.getMember().getId() + "> you are already part of this race!").queue();
             } else {
-                RaceHandler.refreshRaceMessage(race);
+                if (race.getState().equals(TriviaRace.RaceState.STARTING)) {
+                    RaceHandler.addRacer(event.getChannel().getId(), event.getMember());
+                    RaceHandler.refreshRaceMessage(race);
+                } else {
+                    event.getChannel().sendMessage("<@" + event.getMember().getId() + "> You cannot join a race that is in progress!").queue();
+                }
             }
         } else {
             event.getChannel().sendMessage("<@" + event.getMember().getId() + "> A race has not been started yet!").queue();

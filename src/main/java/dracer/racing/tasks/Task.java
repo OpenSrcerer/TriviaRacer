@@ -51,6 +51,18 @@ public interface Task {
         }
     }
 
+    default String emojiMapper(String emoji) {
+        return switch (emoji) {
+            case "\uD83C\uDDE6" -> "a)";
+            case "\uD83C\uDDE7" -> "b)";
+            case "\uD83C\uDDE8" -> "c)";
+            case "\uD83C\uDDE9" -> "d)";
+            case "☑️" -> "true";
+            case "\uD83C\uDDFD" -> "false";
+            default -> throw new IllegalArgumentException("Emoji was invalid");
+        };
+    }
+
     void completedBy(String racerId);
 
     boolean triedBy(String racerId);

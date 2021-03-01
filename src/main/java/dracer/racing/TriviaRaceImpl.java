@@ -3,6 +3,7 @@ package dracer.racing;
 import dracer.TRacer;
 import dracer.racing.entities.Racer;
 import dracer.racing.tasks.Task;
+import dracer.styling.Embed;
 import dracer.util.RaceTime;
 import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.entities.Message;
@@ -16,15 +17,17 @@ import java.util.stream.Collectors;
 
 public final class TriviaRaceImpl implements TriviaRace {
     // --- Immutable ---
+    // All scheduled actions must be added to this future.
+    private final List<ScheduledFuture<?>> raceFutures = new ArrayList<>(); // A list of Futures that represent scheduled actions for the trivia race.
     private final Map<String, Racer> players = new HashMap<>();
     private final RaceTime time = new RaceTime(); // Holds the race's length and other timeframes where actions needs to be taken
     private final Task.TaskCategory category;
+    private final String raceOwner;
     private final String channelId;
     private final String emojID = TRacer.getRandomEmojis();
     // -----------------
 
     // --- Mutable ---
-    private ScheduledFuture<Void> raceEndFuture; // A ScheduledFuture that represents when finishSequence() is called.
     private List<Task> raceTasks = new ArrayList<>();
     private RaceState state = RaceState.STARTING; // Race's current state
     private Message message; // Message to refer to and update while racing
@@ -35,36 +38,28 @@ public final class TriviaRaceImpl implements TriviaRace {
     protected TriviaRaceImpl(Task.TaskCategory category, String channelId, Member startingMember) {
         this.channelId = channelId;
         this.category = category;
+        raceOwner = startingMember.getId();
         players.put(startingMember.getId(), new Racer(startingMember));
     }
 
     // ---- Command Overrides ----
     @Override
-    public boolean addRacer(Member member) {
+    public void addRacer(Member member) {
         if (players.get(member.getId()) == null) {
             players.put(member.getId(), new Racer(member));
-            return true; // signal success
         }
-        return false;
     }
 
     @Override
-    public boolean removeRacer(String racerId) {
+    public void removeRacer(String racerId) {
         if (players.get(racerId) != null) {
             players.remove(racerId);
-            return true; // signal success
         }
-        return false;
     }
 
     @Override
     public void setState(RaceState state) {
         this.state = state;
-    }
-
-    @Override
-    public void setEndFuture(ScheduledFuture<Void> future) {
-        raceEndFuture = future;
     }
 
     @Override
@@ -78,19 +73,21 @@ public final class TriviaRaceImpl implements TriviaRace {
     }
 
     @Override
-    public boolean evalAnswer(String racerId, String answer) {
+    public boolean evalAnswer(String racerId, String emoji) {
         Racer r = players.get(racerId);
+        Task t = raceTasks.get(currentTask);
+
         if (r != null) {
-            Task t = raceTasks.get(currentTask);
             if (!t.triedBy(racerId)) {
                 return false;
             }
-            if (t.isCorrect(answer)) {
+            if (t.isCorrect(emoji)) {
                 t.completedBy(racerId);
                 r.plusTasksCompleted();
             }
+            return true;
         }
-        return true;
+        return false;
     }
 
     @Override
@@ -98,17 +95,24 @@ public final class TriviaRaceImpl implements TriviaRace {
         return cancelled;
     }
 
-    @Override
-    public void cancelFuture() {
-        if (raceEndFuture != null) {
-            raceEndFuture.cancel(false);
+    public void cancel() {
+        if (!raceFutures.isEmpty()) {
+            for (ScheduledFuture<?> future : raceFutures) {
+                future.cancel(true);
+            }
         }
         cancelled = true;
+        message.editMessage(Embed.EmbedFactory(this, Embed.EmbedType.CANCELLED)).queue();
     }
 
     @Override
     public void incrementCurrentTask() {
         currentTask++;
+    }
+
+    @Override
+    public void addActions(List<ScheduledFuture<?>> futures) {
+        raceFutures.addAll(futures);
     }
 
     @Override
@@ -125,7 +129,9 @@ public final class TriviaRaceImpl implements TriviaRace {
     @NotNull
     @Override
     public List<Racer> getPlayers() {
-        return new ArrayList<>(players.values());
+        ArrayList<Racer> racerList = new ArrayList<>(players.values());
+        Collections.reverse(racerList);
+        return new ArrayList<>(racerList);
     }
 
     @NotNull
@@ -176,6 +182,12 @@ public final class TriviaRaceImpl implements TriviaRace {
         }
 
         return leaderboard.toString();
+    }
+
+    @NotNull
+    @Override
+    public String getOwnerId() {
+        return raceOwner;
     }
 
     @NotNull
