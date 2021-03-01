@@ -9,7 +9,7 @@ public class RacingLane {
 
     public RacingLane(String vehicle) {
         this.vehicle = vehicle;
-        this.position = 9;
+        this.position = 0;
     }
 
     public void incrementPosition() {

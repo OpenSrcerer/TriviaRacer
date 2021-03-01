@@ -30,7 +30,7 @@ public class StartRace implements Command {
             int categoryId;
             try {
                 categoryId = Integer.parseInt(arguments.get(0));
-                if (categoryId < 8 || categoryId > 32) {
+                if (categoryId < 0 || categoryId > 24) {
                     throw new IllegalArgumentException("Category not found.");
                 }
             } catch (Exception ex) {
