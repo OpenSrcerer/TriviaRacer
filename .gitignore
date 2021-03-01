@@ -24,3 +24,10 @@ hs_err_pid*
 
 # Config file where tokens are stored & other top secret stuff
 /src/main/resources/config.json
+/target/classes/config.json
+/target/classes/emojis-oliveratgithub.json
+/.idea/dataSources/0494876c-f9ca-49bc-a3d0-7898bdff323c.xml
+/.idea/dataSources/0494876c-f9ca-49bc-a3d0-7898bdff323c/storage_v2/_src_/database/postgres.edMnLQ/schema/information_schema.FNRwLQ.meta
+/.idea/dataSources/0494876c-f9ca-49bc-a3d0-7898bdff323c/storage_v2/_src_/database/postgres.edMnLQ/schema/pg_catalog.0S1ZNQ.meta
+/.idea/dataSources/0494876c-f9ca-49bc-a3d0-7898bdff323c/storage_v2/_src_/database/postgres.edMnLQ.meta
+/.idea/dataSources/0494876c-f9ca-49bc-a3d0-7898bdff323c/storage_v2/_src_/database/postgres.edMnLQ/schema/public.abK9xQ.meta
