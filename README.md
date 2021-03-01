@@ -1,4 +1,4 @@
-<a href="https://discord.com/oauth2/authorize?client_id=813000963349807114&permissions=379968&scope=bot"><h1 align=center>Click me to get TriviaRacer in your server!</h1></a> 
+<a href="https://discord.com/api/oauth2/authorize?client_id=813000963349807114&permissions=388160&scope=bot"><h1 align=center>Click me to get TriviaRacer in your server!</h1></a> 
 <h3>TriviaRacer is a Discord Bot built for trivia and racing lovers. Power up your server in an educational and fun way, by answering trivia questions. It supports a whopping 24 different categories of questions, like anime, science, general knowledge and much more!</h3>
 
 <img src="https://i.ibb.co/1G9g9Rt/t.png" width=500/>
