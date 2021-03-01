@@ -100,9 +100,9 @@ public class Embed extends EmbedBuilder {
 
         if (!isAnswerable) {
             setFooter("Get ready to answer!");
-            setImage("https://raw.githubusercontent.com/OpenSrcerer/TriviaRacer/main/src/main/java/dracer/img/triviaquestiontimer.gif?token=ALCYYNTMPE3DKYC5XNSISHLAIX5ZA");
+            setImage("https://raw.githubusercontent.com/OpenSrcerer/TriviaRacer/main/src/main/java/dracer/img/triviaquestiontimer.gif");
         } else {
-            setImage("https://raw.githubusercontent.com/OpenSrcerer/TriviaRacer/main/src/main/java/dracer/img/fasttimer.gif?token=ALCYYNRQNBEGKXHDQ6JNS4DAIZFKY");
+            setImage("https://raw.githubusercontent.com/OpenSrcerer/TriviaRacer/main/src/main/java/dracer/img/fasttimer.gif");
         }
     }
 
@@ -129,7 +129,7 @@ public class Embed extends EmbedBuilder {
             addField("Awesome! ⭐ You guys got the correct answer:", players.toString(), false);
         }
 
-        setImage("https://raw.githubusercontent.com/OpenSrcerer/TriviaRacer/main/src/main/java/dracer/img/fasttimer.gif?token=ALCYYNRQNBEGKXHDQ6JNS4DAIZFKY");
+        setImage("https://raw.githubusercontent.com/OpenSrcerer/TriviaRacer/main/src/main/java/dracer/img/fasttimer.gif");
     }
 
     private void finished() {

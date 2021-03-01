@@ -31,3 +31,8 @@ hs_err_pid*
 /.idea/dataSources/0494876c-f9ca-49bc-a3d0-7898bdff323c/storage_v2/_src_/database/postgres.edMnLQ/schema/pg_catalog.0S1ZNQ.meta
 /.idea/dataSources/0494876c-f9ca-49bc-a3d0-7898bdff323c/storage_v2/_src_/database/postgres.edMnLQ.meta
 /.idea/dataSources/0494876c-f9ca-49bc-a3d0-7898bdff323c/storage_v2/_src_/database/postgres.edMnLQ/schema/public.abK9xQ.meta
+/target/maven-status/maven-compiler-plugin/compile/default-compile/createdFiles.lst
+/target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/createdFiles.lst
+/target/maven-status/maven-compiler-plugin/compile/default-compile/inputFiles.lst
+/target/maven-status/maven-compiler-plugin/testCompile/default-testCompile/inputFiles.lst
+/target/maven-archiver/pom.properties
